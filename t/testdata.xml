@@ -1,0 +1,9 @@
+<test>
+
+  <title>Test 1</title>
+  <text>This is the text for test 1.</text>
+  
+  <title>Test 2</title>
+  <text>The text does not look like the other test's text.</text>
+
+</test>

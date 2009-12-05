@@ -1,0 +1,27 @@
+--- #YAML:1.0
+name:               MediaWiki-DumpFile
+version:            0.0.0_01
+abstract:           Process various dump files from MediaWiki
+author:
+    - "Tyler Riddle" <"triddle@gmail.com">
+license:            perl
+distribution_type:  module
+configure_requires:
+    ExtUtils::MakeMaker:  0
+build_requires:
+    ExtUtils::MakeMaker:  0
+requires:
+    Data::Compare:   1.2101
+    Scalar::Util:    1.21
+    Test::More:      0.94
+    Test::Simple:    0.94
+    Text::Balanced:  2.02
+    XML::LibXML:     1.70
+no_index:
+    directory:
+        - t
+        - inc
+generated_by:       ExtUtils::MakeMaker version 6.54
+meta-spec:
+    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
+    version:  1.4
