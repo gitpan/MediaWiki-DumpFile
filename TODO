@@ -1,4 +1,1 @@
-  * Get some kind of faster alternative to Text::Balanced in 
-    MediaWiki::DumpFile::SQL
-
-  * Implement an analogue to Parse::MediaWikiDump::Pages and ::Revisions
+  * Finish implementation of MediaWiki::DumpFile::Pages

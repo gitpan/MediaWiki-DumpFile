@@ -16,7 +16,6 @@ WriteMakefile(
         'Test::Simple' => '0.94',
         'Scalar::Util' => '1.21',
         'XML::LibXML' => '1.70',
-        'Text::Balanced' => '2.02',
         'Data::Compare' => '1.2101',
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },

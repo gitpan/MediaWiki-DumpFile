@@ -1,14 +1,12 @@
 package MediaWiki::DumpFile::SQL;
 
-our $VERSION = '0.0.0';
+our $VERSION = '0.0.1';
 
 use strict;
 use warnings;
 use Data::Dumper;
 use Carp qw(croak);
 use Scalar::Util qw(reftype);
-
-use Text::Balanced qw(extract_delimited);
 
 #public methods
 sub new {
@@ -148,10 +146,6 @@ sub parse_more {
 	while(1) {
 		$insert = <$fh>;
 		
-		print STDERR "\r";
-		
-		$self->{insert_count}++;
-		
 		if (! defined($insert)) {
 			close($fh) or die "could not close: $!";
 			$self->{fh} = undef;
@@ -172,7 +166,6 @@ sub parse {
 	my ($self, $string) = @_;
 	my $buffer = $self->{buffer};
 	my $compiled = $self->compile_config;  
-	
 	my $found = 0;
 	
 	$_ = $string;
@@ -215,7 +208,7 @@ sub parse {
 			#^^^^ match the delimiter between rows
 			next;
 		} elsif (m/\G;$/gc) {
-			#^^^^ match end of line
+			#^^^^ match end of statement
 			last;
 		} else {
 			die "expected delimter or end of statement. pos:" . pos;
@@ -336,17 +329,11 @@ sub new_varchar {
 		
 		m/\GNULL/gc and return undef;
 
-		#does not handle very long strings; crashes perl 5.8.9 causes 5.10.0 to error out	
-#		m/\G'((\\.|[^'])*)'/gc or die "expected varchar"; 
-#		$data = $1;
-
-		#extremely slow for this case
-		#Some Inline::C in a class like MediaWiki::DumpFile::SQL::Faster 
-		#to preserve pure perl would help to speed this up
-		($data) = extract_delimited($_, "'");
-		
-		$data =~ s/^'//;
-		$data =~ s/'$//;				
+		#does not handle very long strings; crashes perl 5.8.9 causes 5.10.1 to error out	
+		#m/\G'((\\.|[^'])*)'/gc or die "expected varchar"; 
+		#thanks somni!
+		m/'((?:[^\\']*(?:\\.[^\\']*)*))'/gc or die "expected varchar"; 
+		$data = $1;
 		$data =~ s/(\\.)/unescape($1)/e;
 		
 		return $data;
@@ -415,10 +402,6 @@ Returns a list that represents the table schema as it was parsed by this module.
 is a reference to an array with two elements. The first element is the name of the row and the second
 element is the MySQL datatype associated with the row. The list is in an identical order as the definitions
 in the CREATE TABLE statement. 
-
-=head1 LIMITATIONS
-
-Parsing char, varchar, blobs, and anything else wrapped with '' around them is very very slow at the moment.
 
 =head1 AUTHOR
 

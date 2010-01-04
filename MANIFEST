@@ -3,9 +3,9 @@ MANIFEST
 Makefile.PL
 README
 lib/MediaWiki/DumpFile.pm
-lib/MediaWiki/DumpFile/SimplePages.pm
 lib/MediaWiki/DumpFile/SQL.pm
-t/20-SimplePages.t
+lib/MediaWiki/DumpFile/XML.pm
+lib/MediaWiki/DumpFile/Pages.pm
 t/20-SQL.t
 t/00-load.t
 t/specieswiki-20091204-user_groups.data

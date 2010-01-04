@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile;
 
-our $VERSION = '0.0.0_01';
+our $VERSION = '0.0.1';
 
 use warnings;
 use strict;
@@ -26,14 +26,6 @@ sub sql {
 	return MediaWiki::DumpFile::SQL->new($_[1]);
 }
 
-sub simplepages {
-	if (! defined($_[1])) {
-		croak "must specify a filename or open filehandle";
-	}
-	
-	return MediaWiki::DumpFile::SimplePages->new($_[1]);
-}
-
 1;
 
 __END__
@@ -51,9 +43,6 @@ MediaWiki::DumpFile - Process various dump files from MediaWiki
   $sql = $mw->sql($filename);
   $sql = $mw->sql(\*FH);
   
-  $fast = $mw->simplepages($filename);
-  $fast = $mw->simplepages(\*FH);
-
 =head1 ABOUT
 
 This module is used to parse various dump files from a MediaWiki instance. The most
