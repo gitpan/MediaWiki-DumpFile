@@ -1,9 +1,9 @@
 --- #YAML:1.0
 name:               MediaWiki-DumpFile
-version:            0.0.3
+version:            0.0.4
 abstract:           Process various dump files from a MediaWiki instance
 author:
-    - "Tyler Riddle" <"triddle@gmail.com">
+    - "Tyler Riddle <triddle@gmail.com>"
 license:            perl
 distribution_type:  module
 configure_requires:

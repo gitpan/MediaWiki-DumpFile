@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     NAME                => 'MediaWiki::DumpFile',
-    AUTHOR              => q{"Tyler Riddle" <"triddle@gmail.com">},
+    AUTHOR              => q{"Tyler Riddle <triddle@gmail.com>"},
     VERSION_FROM        => 'lib/MediaWiki/DumpFile.pm',
     ABSTRACT_FROM       => 'lib/MediaWiki/DumpFile.pm',
     ($ExtUtils::MakeMaker::VERSION >= 6.3002
