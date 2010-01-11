@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile::Pages;
 
-our $VERSION = '0.0.0';
+our $VERSION = '0.0.3';
 
 use strict;
 use warnings;
@@ -35,10 +35,6 @@ sub new {
 	
 	$self->_init;
 	
-	if ($self->{version} ne '0.3' && $self->{version} ne '0.4') {
-		die "only version 0.3 and 0.4 version dump files are supported";
-	}
-	
 	return $self;
 }
 
@@ -49,11 +45,7 @@ sub next {
 	
 	return undef unless defined $new;
 	
-	if ($version eq '0.4') {
-		return MediaWiki::DumpFile::Pages::Page->new($new);
-	} else {
-		die "unexpected dump version";
-	}
+	return MediaWiki::DumpFile::Pages::Page->new($new);
 }
 
 sub version {
@@ -92,7 +84,7 @@ sub namespaces {
 		
 		$name = '' unless defined $name;
 		
-		$namespaces{$name} = $id;
+		$namespaces{$id} = $name;
 	}
 
 	return %namespaces;
@@ -188,3 +180,82 @@ sub comment {
 } 
 
 1;
+
+__END__
+
+=head1 NAME
+
+MediaWiki::DumpFile::Pages - Process an XML dump file of pages from a MediaWiki instance
+
+=head1 SYNOPSIS
+
+  use MediaWiki::DumpFile::Pages;
+  
+  $pages = MediaWiki::DumpFile::Pages->new($file);
+  $pages = MediaWiki::DumpFile::Pages->new(\*FH);
+  
+  while(defined($page = $pages->next) {
+    print 'Title: ', $page->title, "\n";
+    print 'Text: ', $page->revision->text, "\n";
+  }
+  
+=head1 METHODS
+
+=head2 new
+
+This is the constructor for this package. It is called with a single parameter: the location of
+a MediaWiki pages dump file or a reference to an already open file handle. 
+
+=head2 next
+
+Returns an instance of MediaWiki::DumpFile::Pages::Page or undef if there is no more pages
+available. 
+
+=head1 MediaWiki::DumpFile::Pages::Page
+
+This object represents a distinct Mediawiki page and is used to access the page data and metadata. The following
+methods are available:
+
+=over 4
+
+=item title
+
+Returns a string of the page title
+
+=item id
+
+Returns a numerical page identification
+
+=item revision
+
+In scalar context returns the most recent revision data for this page; in array context returns a list of all
+revisions made available for the page in the same order as the dump file. All returned data is an instance of
+MediaWiki::DumpFile::Pages::Revision
+
+=back
+
+=head1 MediaWiki::DumpFile::Pages::Page::Revision
+
+This object represents a distinct revision of a page from the Mediawiki dump file. The standard dump files contain only the most specific
+revision of each page and the comprehensive dump files contain all revisions for each page. The following methods are available:
+
+=over 4
+
+=item text
+
+Returns the page text for this specific revision of the page. 
+
+=item id
+
+Returns the numerical revision id for this specific revision - this is independent of the page id. 
+
+=item timestamp 
+
+Returns a string value representing the time the revision was created. The string is in the format of 
+"2008-07-09T18:41:10Z".
+
+=item comment
+
+Returns the comment made about the revision when it was created. 
+
+=back

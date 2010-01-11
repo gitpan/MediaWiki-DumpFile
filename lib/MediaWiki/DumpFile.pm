@@ -1,13 +1,13 @@
 package MediaWiki::DumpFile;
 
-our $VERSION = '0.0.1';
+our $VERSION = '0.0.3';
 
 use warnings;
 use strict;
 use Carp qw(croak);
 
 use MediaWiki::DumpFile::SQL;
-use MediaWiki::DumpFile::SimplePages;
+use MediaWiki::DumpFile::Pages;
 
 sub new {
 	my ($class, %files) = @_;
@@ -26,13 +26,21 @@ sub sql {
 	return MediaWiki::DumpFile::SQL->new($_[1]);
 }
 
+sub pages {
+	if (! defined($_[1])) {
+		croak "must specify a filename or open filehandle";
+	}
+	
+	return MediaWiki::DumpFile::Pages->new($_[1]);
+}
+
 1;
 
 __END__
 
 =head1 NAME
 
-MediaWiki::DumpFile - Process various dump files from MediaWiki
+MediaWiki::DumpFile - Process various dump files from a MediaWiki instance
 
 =head1 SYNOPSIS
 
@@ -42,6 +50,10 @@ MediaWiki::DumpFile - Process various dump files from MediaWiki
   
   $sql = $mw->sql($filename);
   $sql = $mw->sql(\*FH);
+  
+  $pages = $mw->pages($filename);
+  $pages = $mw->pages(\*FH);
+  
   
 =head1 ABOUT
 
@@ -58,7 +70,8 @@ Parse::MediaWikiDump.
 This is currently bleeding edge software. API changes may happen in the future (but will try
 to be avoided), there may be bugs, it might not work at all, etc. If you need something well tested
 and stable use Parse::MediaWikiDump instead. If you do encounter issues with this software please
-open a bug report according to the documentation below. 
+open a bug report according to the documentation below. See the LIMITATIONS section below for
+what is left to be supported. 
 
 =head1 FUNCTIONS
 
@@ -67,11 +80,18 @@ open a bug report according to the documentation below.
 Return an instance of MediaWiki::DumpFile::SQL. This object can be used to parse
 any arbitrary SQL dump file used to recreate a single table in the MediaWiki instance. 
 
-=head2 simplepages
+=head2 pages
 
-Return an instance of MediaWiki::DumpFile::SimplePages. This object parses the contents of the
-page dump file but only supports article titles and text. The benefit of using this object
-is that it is extremely fast. 
+Return an instance of MediaWiki::DumpFile::Pages. This object parses the contents of the
+page dump file. 
+
+=head1 LIMITATIONS
+
+This software is not completed yet; specifically the object for parsing the pages dump file
+does not support all of the data made available in the dump file. The most commonly used
+information should already be supported and patches are always welcome to add support
+before I can get around to it. See the documentation for MediaWiki::DumpFile::Pages
+for up to date information on what is and what is not supported at this time. 
 
 =head1 AUTHOR
 
