@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile::SQL;
 
-our $VERSION = '0.0.1';
+our $VERSION = '0.0.6';
 
 use strict;
 use warnings;
@@ -25,6 +25,7 @@ sub new {
 	$self->{table_name} = undef;
 	$self->{schema} = undef;
 	$self->{type_map} = undef;
+	$self->{table_statement} = undef;
 	
 	$self->create_type_map;
 	$self->open_file;
@@ -51,6 +52,11 @@ sub next {
 sub table_name {
 	my ($self) = @_;
 	return $self->{table_name};
+}
+
+sub table_statement {
+	my ($self) = @_;
+	return $self->{table_statement};
 }
 
 sub schema {
@@ -87,12 +93,15 @@ sub parse_table {
 	my $fh = $self->{fh};
 	my $found = 0;
 	my $table;
+	my $table_statement;
 	my @cols;
 	
 	#find the CREATE TABLE line and get the table name
 	while(<$fh>) {
 		if (m/^CREATE TABLE `([^`]+)` \(/) {
 			$table = $1;
+			$table_statement = $_;
+			
 			last;
 		}
 	}
@@ -100,6 +109,8 @@ sub parse_table {
 	die "expected CREATE TABLE" unless defined($table);
 	
 	while(<$fh>) {
+		$table_statement .= $_;
+
 		if (m/^\)/) {
 			last;
 		} elsif (m/^\s+`([^`]+)` (\w+)/) {
@@ -114,6 +125,7 @@ sub parse_table {
 
 	$self->{table_name} = $table;
 	$self->{schema} = \@cols;
+	$self->{table_statement} = $table_statement;
 	
 	return 1;
 }
@@ -395,6 +407,11 @@ the value for that column and row. Returns undef when there is no more data avai
 =head2 table_name
 
 Returns a string of the table name that was discovered in the dump file. 
+
+=head2 table_statement
+
+Returns a string of the unparsed CREATE TABLE statement straight from the
+dump file. 
 
 =head2 schema
 

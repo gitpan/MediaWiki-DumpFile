@@ -6,7 +6,7 @@ use Data::Compare;
 
 use Storable qw(nstore retrieve);
 
-use Test::Simple tests => 104;
+use Test::Simple tests => 106;
 
 use MediaWiki::DumpFile;
 
@@ -26,6 +26,7 @@ sub test_suite {
 	my @schema = $p->schema;
 
 	ok($p->table_name eq 'user_groups');
+	ok($p->table_statement eq table_statement_data());
 	
 	ok($schema[0][0] eq 'ug_user');
 	ok($schema[0][1] eq 'int');
@@ -40,4 +41,14 @@ sub test_suite {
 		ok(Compare($test_against, $row));
 	}
 	
+}
+
+sub table_statement_data {
+	return "CREATE TABLE `user_groups` (
+  `ug_user` int(5) unsigned NOT NULL default '0',
+  `ug_group` varchar(16) binary NOT NULL default '',
+  PRIMARY KEY  (`ug_user`,`ug_group`),
+  KEY `ug_group` (`ug_group`)
+) TYPE=InnoDB;
+";
 }

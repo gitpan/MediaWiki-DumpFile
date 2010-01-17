@@ -228,7 +228,7 @@ Returns a numerical page identification
 
 =item revision
 
-In scalar context returns the most recent revision data for this page; in array context returns a list of all
+In scalar context returns the last revision in the dump for this page; in array context returns a list of all
 revisions made available for the page in the same order as the dump file. All returned data is an instance of
 MediaWiki::DumpFile::Pages::Revision
 
@@ -259,3 +259,22 @@ Returns a string value representing the time the revision was created. The strin
 Returns the comment made about the revision when it was created. 
 
 =back
+
+=head1 AUTHOR
+
+"Tyler Riddle", C<< <"triddle at gmail.com"> >>
+
+=head1 BUGS
+
+Please see MediaWiki::DumpFile for information on how to report bugs in 
+this software. 
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2009 "Tyler Riddle".
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.

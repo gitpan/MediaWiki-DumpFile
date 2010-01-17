@@ -1,5 +1,11 @@
 Revision history for MediaWiki-DumpFile
 
-0.01    Date/time
-        First version, released on an unsuspecting world.
+0.0.6	
+  * Remembered to start listing changes
+  * Implemented a method to get the contents of
+    the create_table statement in ::SQL per bug 
+    #53371
+
+0.0.1    
+  * First version, released on an unsuspecting world.
 
