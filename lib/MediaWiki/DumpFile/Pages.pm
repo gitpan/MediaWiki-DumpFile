@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile::Pages;
 
-our $VERSION = '0.0.3';
+our $VERSION = '0.0.7';
 
 use strict;
 use warnings;
@@ -194,10 +194,26 @@ MediaWiki::DumpFile::Pages - Process an XML dump file of pages from a MediaWiki 
   $pages = MediaWiki::DumpFile::Pages->new($file);
   $pages = MediaWiki::DumpFile::Pages->new(\*FH);
   
+  $version = $pages->version; 
+  $sitename = $pages->sitename; 
+  $base = $pages->base;
+  $generator = $pages->generator;
+  $case = $pages->case;
+  %namespaces = $pages->namespaces;
+  
   while(defined($page = $pages->next) {
     print 'Title: ', $page->title, "\n";
-    print 'Text: ', $page->revision->text, "\n";
   }
+  
+  $title = $page->title; 
+  $id = $page->id; 
+  $revision = $page->revision; 
+  @revision = $page->revision; 
+  
+  $text = $revision->text; 
+  $id = $revision->id; 
+  $timestamp = $revision->timestamp; 
+  $comment = $revision->comment; 
   
 =head1 METHODS
 
@@ -205,6 +221,32 @@ MediaWiki::DumpFile::Pages - Process an XML dump file of pages from a MediaWiki 
 
 This is the constructor for this package. It is called with a single parameter: the location of
 a MediaWiki pages dump file or a reference to an already open file handle. 
+
+=head2 version
+
+Returns the version of the dump file.
+
+=head2 sitename
+
+Returns the sitename from the MediaWiki instance.
+
+=head2 base
+
+Returns the URL used to access the MediaWiki instance.
+
+=head2 generator
+
+Returns the version of MediaWiki that generated the dump file.
+
+=head2 case
+
+Returns the case sensitivity configuration of the MediaWiki instance.
+
+=head2 namespaces
+
+Returns a hash where the key is the numerical namespace id and the value is
+the plain text namespace name. The main namespace has an id of 0 and an empty 
+string value. 
 
 =head2 next
 
@@ -262,7 +304,7 @@ Returns the comment made about the revision when it was created.
 
 =head1 AUTHOR
 
-"Tyler Riddle", C<< <"triddle at gmail.com"> >>
+Tyler Riddle, C<< <triddle at gmail.com> >>
 
 =head1 BUGS
 

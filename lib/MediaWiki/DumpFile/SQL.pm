@@ -422,7 +422,7 @@ in the CREATE TABLE statement.
 
 =head1 AUTHOR
 
-"Tyler Riddle", C<< <"triddle at gmail.com"> >>
+Tyler Riddle, C<< <triddle at gmail.com> >>
 
 =head1 BUGS
 

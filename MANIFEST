@@ -6,11 +6,13 @@ lib/MediaWiki/DumpFile.pm
 lib/MediaWiki/DumpFile/SQL.pm
 lib/MediaWiki/DumpFile/XML.pm
 lib/MediaWiki/DumpFile/Pages.pm
+lib/MediaWiki/DumpFile/FastPages.pm
+t/20-FastPages.t
+t/20-Pages.t
 t/20-SQL.t
 t/00-load.t
 t/specieswiki-20091204-user_groups.data
 t/specieswiki-20091204-user_groups.sql
-t/20-Pages.t
 t/pages_test.xml
 TODO
 META.yml                                 Module meta-data (added by MakeMaker)

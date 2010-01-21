@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile;
 
-our $VERSION = '0.0.6';
+our $VERSION = '0.0.7';
 
 use warnings;
 use strict;
@@ -8,6 +8,7 @@ use Carp qw(croak);
 
 use MediaWiki::DumpFile::SQL;
 use MediaWiki::DumpFile::Pages;
+use MediaWiki::DumpFile::FastPages;
 
 sub new {
 	my ($class, %files) = @_;
@@ -34,6 +35,14 @@ sub pages {
 	return MediaWiki::DumpFile::Pages->new($_[1]);
 }
 
+sub fastpages {
+	if (! defined($_[1])) {
+		croak "must specify a filename or open filehandle";
+	}
+	
+	return MediaWiki::DumpFile::FastPages->new($_[1]);
+}
+
 1;
 
 __END__
@@ -54,6 +63,8 @@ MediaWiki::DumpFile - Process various dump files from a MediaWiki instance
   $pages = $mw->pages($filename);
   $pages = $mw->pages(\*FH);
   
+  $fastpages = $mw->fastpages($filename);
+  $fastpages = $mw->fastpages(\*FH);
   
 =head1 ABOUT
 
@@ -83,7 +94,34 @@ any arbitrary SQL dump file used to recreate a single table in the MediaWiki ins
 =head2 pages
 
 Return an instance of MediaWiki::DumpFile::Pages. This object parses the contents of the
-page dump file. 
+page dump file and supports both single and multiple revisions per article as well as
+associated metadata.
+
+=head2 fastpages
+
+Return an instance of MediaWiki::DumpFile::FastPages. This object parses the contents
+of the page dump file but only supports fetching the article titles and text and will
+only return the text for the first revision of the article if the page dump includes
+multiple revisions. The trade off for the lack of features is drastically increased
+processing speed.
+
+=head1 SPEED
+
+These benchmarks will give you a rough idea of how fast you can expect the XML dump
+files to be processed. The benchmark is to print all of the article titles and text
+to STDOUT and was executed on a 2.66 GHz Intel Core Duo Macintosh running
+Snow Leopard. The test data is a dump file of the Simple English Wikipedia from
+October 21, 2009.
+
+=over 4
+
+=item MediaWiki-DumpFile-FastPages: 26.4 MiB/sec
+
+=item MediaWiki-DumpFile-Pages: 10.6 MiB/sec
+
+=item Parse-MediaWikiDump: 3.2 MiB/sec
+
+=back
 
 =head1 LIMITATIONS
 
@@ -95,7 +133,7 @@ for up to date information on what is and what is not supported at this time.
 
 =head1 AUTHOR
 
-"Tyler Riddle", C<< <"triddle at gmail.com"> >>
+Tyler Riddle, C<< <triddle at gmail.com> >>
 
 =head1 BUGS
 

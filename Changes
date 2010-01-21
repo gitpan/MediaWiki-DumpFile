@@ -1,5 +1,11 @@
 Revision history for MediaWiki-DumpFile
 
+0.0.7
+  * Added MediaWiki::DumpFile::FastPages - twice
+    as fast as MediaWiki::DumpFile::Pages but
+    with limited features.
+  * Improved documentation for MediaWiki::DumpFile::Pages
+
 0.0.6	
   * Remembered to start listing changes
   * Implemented a method to get the contents of
