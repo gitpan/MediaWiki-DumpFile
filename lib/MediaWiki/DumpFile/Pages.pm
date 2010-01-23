@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile::Pages;
 
-our $VERSION = '0.0.7';
+our $VERSION = '0.0.8';
 
 use strict;
 use warnings;
@@ -179,6 +179,68 @@ sub comment {
 	return $_[0]->{tree}->get_element('/revision/comment')->text;
 } 
 
+sub minor {
+	return 1 if defined $_[0]->{tree}->get_element('/revision/minor');
+	return 0;
+}
+
+sub contributor {
+	return MediaWiki::DumpFile::Pages::Page::Revision::Contributor->new(
+		$_[0]->{tree}->get_element('/revision/contributor') );
+}
+
+package MediaWiki::DumpFile::Pages::Page::Revision::Contributor;
+
+use strict;
+use warnings;
+
+use Carp qw(croak);
+
+use overload 
+	'""' => 'astext',
+	fallback => 'TRUE';
+
+sub astext {
+	my ($self) = @_;
+	
+	if (defined($self->ip)) {
+		return $self->ip;
+	} 	
+	
+	return $self->username;
+}
+
+sub new {
+	my ($class, $tree) = @_;
+	my $self = { tree => $tree };
+	
+	return bless($self, $class);
+}
+
+sub username {
+	my $user = $_[0]->{tree}->get_element('/contributor/username');
+	
+	return undef unless defined $user;
+	
+	return $user->text;
+}
+
+sub id {
+	my $id = $_[0]->{tree}->get_element('/contributor/id');
+	
+	return undef unless defined $id;
+	
+	return $id->text;
+}
+
+sub ip {
+	my $ip = $_[0]->{tree}->get_element('/contributor/ip');
+	
+	return undef unless defined $ip;
+	
+	return $ip->text;
+}
+
 1;
 
 __END__
@@ -214,6 +276,13 @@ MediaWiki::DumpFile::Pages - Process an XML dump file of pages from a MediaWiki 
   $id = $revision->id; 
   $timestamp = $revision->timestamp; 
   $comment = $revision->comment; 
+  $contributor = $revision->contributor;
+  
+  $username = $contributor->username;
+  $id = $contributor->id;
+  $ip = $contributor->ip;
+  $username_or_ip = $contributor->astext;
+  $username_or_ip = "$contributor";
   
 =head1 METHODS
 
@@ -299,6 +368,41 @@ Returns a string value representing the time the revision was created. The strin
 =item comment
 
 Returns the comment made about the revision when it was created. 
+
+=item contributor
+
+Returns an instance of MediaWiki::DumpFile::Pages::Page::Revision::Contributor
+
+=item minor
+
+Returns true if the edit was marked as being minor or false otherwise
+
+=back
+
+=head1 MediaWiki::DumpFile::Pages::Page::Revision::Contributor
+
+This object provides access to the contributor of a specific revision of a page. When used in a scalar
+context it will return the username of the editor if the editor was logged in or the IP address of
+the editor if the edit was anonymous.
+
+=over 4
+
+=item username
+
+Returns the username of the editor if the editor was logged in when the edit was made or undef otherwise.
+
+=item id
+
+Returns the numerical id of the editor if the editor was logged in or undef otherwise.
+
+=item ip
+
+Returns the IP address of the editor if the editor was anonymous or undef otherwise. 
+
+=item astext
+
+Returns the username of the editor if they were logged in or the IP address if the editor
+was anonymous. 
 
 =back
 

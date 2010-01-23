@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::Simple tests => 56;
+use Test::Simple tests => 84;
 use Data::Compare; 
 use Data::Dumper;
 
@@ -46,13 +46,19 @@ sub new_namespace_data {
 sub test_one {
 	my ($page) = @_;
 	my $revision = $page->revision;
-	
+		
 	ok($page->title eq 'Talk:Title Test Value');
 	ok($page->id == 1);
 	ok($revision->text eq 'Text Test Value');
 	ok($revision->id == 47084);
 	ok($revision->timestamp eq '2005-07-09T18:41:10Z');
 	ok($revision->comment eq 'Comment Test Value');
+	ok($revision->minor == 1);
+	ok($page->revision->contributor->username eq 'Username Test Value');
+	ok($page->revision->contributor->id == 1292);
+	ok(! defined($page->revision->contributor->ip));
+	ok($page->revision->contributor->astext eq 'Username Test Value');
+	ok($page->revision->contributor eq 'Username Test Value');
 }
 
 sub test_two {
@@ -68,12 +74,16 @@ sub test_two {
 	ok($revision->timestamp eq '2005-07-09T18:41:10Z');
 	ok($revision->comment eq 'Comment Test Value 2');
 	ok($revision->text eq '#redirect : [[fooooo]]');
+	ok($revision->minor == 1);
+	
 	
 	$revision = shift(@revisions);
 	ok($revision->id == 12345);
 	ok($revision->timestamp eq '2006-07-09T18:41:10Z');
 	ok($revision->comment eq 'Comment Test Value 3');
 	ok($revision->text eq 'more test data');
+	ok($revision->minor == 0);
+	
 }
 
 sub test_three {
@@ -87,4 +97,10 @@ sub test_three {
 	ok($revision->timestamp eq '2008-07-09T18:41:10Z');
 	ok($revision->comment eq 'Second Comment Test Value');
 	ok($revision->text eq 'Expecting this data');
+	ok($revision->minor == 1);
+	ok($revision->contributor->ip eq '194.187.135.27');
+	ok(! defined($revision->contributor->username));
+	ok(! defined($revision->contributor->id));
+	ok($revision->contributor->astext eq '194.187.135.27');
+	ok($revision->contributor eq '194.187.135.27');	
 }

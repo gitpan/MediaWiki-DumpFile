@@ -1,5 +1,9 @@
 Revision history for MediaWiki-DumpFile
 
+0.0.8
+  * Added minor method to ::Pages::Revision
+  * Created ::Pages::Revision::Contributor
+
 0.0.7
   * Added MediaWiki::DumpFile::FastPages - twice
     as fast as MediaWiki::DumpFile::Pages but

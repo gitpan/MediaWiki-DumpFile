@@ -59,7 +59,8 @@
     <revision>
       <id>57086</id>
       <timestamp>2008-07-09T18:41:10Z</timestamp>
-      <contributor><username>Username Test Value</username><id>1292</id></contributor>
+      <contributor>
+      	<ip>194.187.135.27</ip></contributor>
       <minor/>
       <comment>Second Comment Test Value</comment>
       <text xml:space="preserve">Expecting this data</text>
