@@ -1,14 +1,10 @@
 package MediaWiki::DumpFile;
 
-our $VERSION = '0.0.8';
+our $VERSION = '0.0.9';
 
 use warnings;
 use strict;
 use Carp qw(croak);
-
-use MediaWiki::DumpFile::SQL;
-use MediaWiki::DumpFile::Pages;
-use MediaWiki::DumpFile::FastPages;
 
 sub new {
 	my ($class, %files) = @_;
@@ -24,6 +20,8 @@ sub sql {
 		croak "must specify a filename or open filehandle";
 	}
 	
+	require MediaWiki::DumpFile::SQL;
+	
 	return MediaWiki::DumpFile::SQL->new($_[1]);
 }
 
@@ -32,6 +30,8 @@ sub pages {
 		croak "must specify a filename or open filehandle";
 	}
 	
+	require MediaWiki::DumpFile::Pages;
+	
 	return MediaWiki::DumpFile::Pages->new($_[1]);
 }
 
@@ -39,6 +39,8 @@ sub fastpages {
 	if (! defined($_[1])) {
 		croak "must specify a filename or open filehandle";
 	}
+	
+	require MediaWiki::DumpFile::FastPages;
 	
 	return MediaWiki::DumpFile::FastPages->new($_[1]);
 }

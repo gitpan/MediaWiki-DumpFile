@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile::Pages;
 
-our $VERSION = '0.0.8';
+our $VERSION = '0.0.9';
 
 use strict;
 use warnings;
@@ -45,12 +45,39 @@ sub next {
 	
 	return undef unless defined $new;
 	
-	return MediaWiki::DumpFile::Pages::Page->new($new);
+	return MediaWiki::DumpFile::Pages::Page->new($new, $version);
 }
 
 sub version {
 	return $_[0]->{version};
 }
+
+#private methods
+
+sub _init {
+	my ($self) = @_;
+	my $xml = $self->{xml};
+	my $version;
+	
+	$xml->config('/mediawiki', 'element');
+	$xml->config('/mediawiki/siteinfo', 'subtree');
+	$xml->config('/mediawiki/page', 'subtree');
+	
+	$version = $self->{version} = $xml->next->attribute('version');
+	
+	if ($version > 0.2) {
+		$self->{siteinfo} = $xml->next;
+		bless($self, 'MediaWiki::DumpFile::PagesSiteinfo');
+	} elsif ($version > 0.4) {
+		die "version $version dump file is not supported";
+	}
+		
+	return undef;
+}
+
+package MediaWiki::DumpFile::PagesSiteinfo;
+
+use base qw(MediaWiki::DumpFile::Pages);
 
 sub sitename {
 	return $_[0]->_siteinfo('sitename');
@@ -69,20 +96,13 @@ sub case {
 }
 
 sub namespaces {
-	my $namespaces = $_[0]->{siteinfo}->get_element('/siteinfo/namespaces')->child_nodes;
 	my %namespaces;
 
-	foreach (@$namespaces) {
+	foreach ($_[0]->{siteinfo}->get_elements('namespaces/namespace')) {
 		my ($name, $id);
 		
-		next unless $_->[0] == XML_READER_TYPE_ELEMENT;
-		bless($_, 'MediaWiki::DumpFile::XML::Element');		
-		next unless $_->name eq 'namespace';
-		
 		$name = $_->text;
-		$id = $_->attributes->{key};
-		
-		$name = '' unless defined $name;
+		$id = $_->attribute('key');
 		
 		$namespaces{$id} = $name;
 	}
@@ -90,28 +110,13 @@ sub namespaces {
 	return %namespaces;
 }
 
-#private methods
-
-sub _init {
-	my ($self) = @_;
-	my $xml = $self->{xml};
-	
-	$xml->config('/mediawiki', 'element');
-	$xml->config('/mediawiki/siteinfo', 'subtree');
-	$xml->config('/mediawiki/page', 'subtree');
-	
-	$self->{version} = $xml->next->attributes->{version};
-	$self->{siteinfo} = $xml->next;
-	
-	return undef;
-}
-
 sub _siteinfo {
 	my ($self, $name) = @_;
 	my $siteinfo = $self->{siteinfo};
 	
-	return $siteinfo->get_element("/siteinfo/$name")->text;
+	return $siteinfo->get_elements("$name")->text;
 }
+
 
 package MediaWiki::DumpFile::Pages::Page;
 
@@ -120,27 +125,31 @@ use warnings;
 use Data::Dumper;
 
 sub new {
-	my ($class, $element) = @_;
+	my ($class, $element, $version) = @_;
 	my $self = { tree => $element };
 	
 	bless($self, $class);
+	
+	if ($version >= 0.4) {
+		bless ($self, 'MediaWiki::DumpFile::Pages::Page000004000');
+	}
 	
 	return $self;
 }
 
 sub title {
-	return $_[0]->{tree}->get_element('/page/title')->text;
+	return $_[0]->{tree}->get_elements('title')->text;
 }
 
 sub id {
-	return $_[0]->{tree}->get_element('/page/id')->text;
+	return $_[0]->{tree}->get_elements('id')->text;
 }
 
 sub revision {
 	my ($self) = @_;
 	my @revisions;
 	
-	foreach ($self->{tree}->get_element('/page/revision')) {
+	foreach ($self->{tree}->get_elements('revision')) {
 		push(@revisions, MediaWiki::DumpFile::Pages::Page::Revision->new($_));
 	}
 	
@@ -150,6 +159,14 @@ sub revision {
 	
 	return pop(@revisions);
 }
+
+package MediaWiki::DumpFile::Pages::Page000004000;
+
+sub redirect {
+	return 1 if defined $_[0]->{tree}->get_elements('redirect');
+	return 0;
+}
+
 
 package MediaWiki::DumpFile::Pages::Page::Revision;
 
@@ -164,29 +181,29 @@ sub new {
 }
 
 sub text {
-	return $_[0]->{tree}->get_element('/revision/text')->text;
+	return $_[0]->{tree}->get_elements('text')->text;
 }
 
 sub id {
-	return $_[0]->{tree}->get_element('/revision/id')->text;
+	return $_[0]->{tree}->get_elements('id')->text;
 }
 
 sub timestamp {
-	return $_[0]->{tree}->get_element('/revision/timestamp')->text;
+	return $_[0]->{tree}->get_elements('timestamp')->text;
 }
 
 sub comment {
-	return $_[0]->{tree}->get_element('/revision/comment')->text;
+	return $_[0]->{tree}->get_elements('comment')->text;
 } 
 
 sub minor {
-	return 1 if defined $_[0]->{tree}->get_element('/revision/minor');
+	return 1 if defined $_[0]->{tree}->get_elements('minor');
 	return 0;
 }
 
 sub contributor {
 	return MediaWiki::DumpFile::Pages::Page::Revision::Contributor->new(
-		$_[0]->{tree}->get_element('/revision/contributor') );
+		$_[0]->{tree}->get_elements('contributor') );
 }
 
 package MediaWiki::DumpFile::Pages::Page::Revision::Contributor;
@@ -200,6 +217,13 @@ use overload
 	'""' => 'astext',
 	fallback => 'TRUE';
 
+sub new {
+	my ($class, $tree) = @_;
+	my $self = { tree => $tree };
+	
+	return bless($self, $class);
+}
+
 sub astext {
 	my ($self) = @_;
 	
@@ -210,15 +234,8 @@ sub astext {
 	return $self->username;
 }
 
-sub new {
-	my ($class, $tree) = @_;
-	my $self = { tree => $tree };
-	
-	return bless($self, $class);
-}
-
 sub username {
-	my $user = $_[0]->{tree}->get_element('/contributor/username');
+	my $user = $_[0]->{tree}->get_elements('username');
 	
 	return undef unless defined $user;
 	
@@ -226,7 +243,7 @@ sub username {
 }
 
 sub id {
-	my $id = $_[0]->{tree}->get_element('/contributor/id');
+	my $id = $_[0]->{tree}->get_elements('id');
 	
 	return undef unless defined $id;
 	
@@ -234,7 +251,7 @@ sub id {
 }
 
 sub ip {
-	my $ip = $_[0]->{tree}->get_element('/contributor/ip');
+	my $ip = $_[0]->{tree}->get_elements('ip');
 	
 	return undef unless defined $ip;
 	
@@ -257,12 +274,15 @@ MediaWiki::DumpFile::Pages - Process an XML dump file of pages from a MediaWiki 
   $pages = MediaWiki::DumpFile::Pages->new(\*FH);
   
   $version = $pages->version; 
+  
+  #version 0.3 and later dump files only
   $sitename = $pages->sitename; 
   $base = $pages->base;
   $generator = $pages->generator;
   $case = $pages->case;
   %namespaces = $pages->namespaces;
   
+  #all versions
   while(defined($page = $pages->next) {
     print 'Title: ', $page->title, "\n";
   }
@@ -270,13 +290,15 @@ MediaWiki::DumpFile::Pages - Process an XML dump file of pages from a MediaWiki 
   $title = $page->title; 
   $id = $page->id; 
   $revision = $page->revision; 
-  @revision = $page->revision; 
+  @revisions = $page->revision; 
   
   $text = $revision->text; 
   $id = $revision->id; 
   $timestamp = $revision->timestamp; 
   $comment = $revision->comment; 
   $contributor = $revision->contributor;
+  #version 0.4 and later dump files only
+  $bool = $revision->redirect;
   
   $username = $contributor->username;
   $id = $contributor->id;
@@ -297,25 +319,25 @@ Returns the version of the dump file.
 
 =head2 sitename
 
-Returns the sitename from the MediaWiki instance.
+Returns the sitename from the MediaWiki instance. Requires a dump file of at least version 0.3.
 
 =head2 base
 
-Returns the URL used to access the MediaWiki instance.
+Returns the URL used to access the MediaWiki instance. Requires a dump file of at least version 0.3.
 
 =head2 generator
 
-Returns the version of MediaWiki that generated the dump file.
+Returns the version of MediaWiki that generated the dump file. Requires a dump file of at least version 0.3.
 
 =head2 case
 
-Returns the case sensitivity configuration of the MediaWiki instance.
+Returns the case sensitivity configuration of the MediaWiki instance. Requires a dump file of at least version 0.3.
 
 =head2 namespaces
 
 Returns a hash where the key is the numerical namespace id and the value is
 the plain text namespace name. The main namespace has an id of 0 and an empty 
-string value. 
+string value. Requires a dump file of at least version 0.3.
 
 =head2 next
 
@@ -376,6 +398,10 @@ Returns an instance of MediaWiki::DumpFile::Pages::Page::Revision::Contributor
 =item minor
 
 Returns true if the edit was marked as being minor or false otherwise
+
+=item redirect
+
+Returns true if the page is a redirect to another page or false otherwise. Requires a dump file of at least version 0.4.
 
 =back
 

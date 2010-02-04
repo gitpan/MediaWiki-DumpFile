@@ -3,14 +3,21 @@ package MediaWiki::DumpFile::XML;
 use strict;
 use warnings;
 use Data::Dumper;
+use Scalar::Util qw(reftype);
 
 use XML::LibXML::Reader; 
 use XML::CompactTree::XS;
+
+#this only works well enough to be used
+#in MediaWiki::DumpFile - it's not
+#general purpose yet
 
 sub new {
 	my ($class, @args) = @_;
 	my $self = {};
 	my $reader;
+	
+	#die "obsoleted by XML::TreePuller";
 	
 	bless($self, $class);
 	
@@ -39,7 +46,7 @@ sub next {
 	my $elements = $self->{elements};
 	my $config = $self->{config};
 	
-	return undef if $self->{finished};
+	return () if $self->{finished};
 	
 	while(1) {
 		my $type = $reader->nodeType;
@@ -50,27 +57,32 @@ sub next {
 			my $path = '/' . join('/', @$elements);
 			my $todo = $config->{$path};
 			my $did_something = 0;
+			my $ignore_empty = 0;
 			my $ret;
 				
 			if (defined($todo)) {	
 				if ($todo eq 'subtree') {
-					$ret = $self->do_subtree;
+					$ret = $self->_do_subtree;
+					$self->sync;
+					$ignore_empty = 1;
 				} elsif ($todo eq 'element') {
-					$ret = $self->read_element;
-				} elsif (ref($todo) eq 'CODE') {
-					$ret = $self->do_code($todo);
+					$ret = $self->_read_element;
 				} else {
-					die "unexpected todo type";
+					die "unexpected todo type: $todo";
 				}
 				
 				$did_something = 1;
 			}
 			
-			if ($is_empty) {
+			if ($is_empty && ! $ignore_empty) {
 				pop(@$elements);
 			}
 			
 			if ($did_something) {
+				if (wantarray()) {
+					return ($path, $ret);
+				}
+				
 				return $ret;
 			}
 		} elsif ($type == XML_READER_TYPE_END_ELEMENT) {
@@ -81,7 +93,7 @@ sub next {
 		
 		if ($ret == 0) {
 			$self->{finished} = 1;
-			return undef;
+			return ();
 		}
 		
 		die "libxml read error" if $ret == -1;
@@ -91,24 +103,25 @@ sub next {
 	
 }
 
-sub do_code {
-	my ($self, $ref) = @_;
-	
-	return &$ref($self->read_element);
+sub reader {
+	return $_[0]->{reader};
 }
 
-sub do_subtree {
+sub sync {
+	my ($self) = @_;
+	my $depth = $self->{reader}->depth;
+
+	splice(@{$self->{elements}}, $depth);
+}
+
+
+#private methods
+sub _do_subtree {
 	my ($self) = @_;
 	my $reader = $self->{reader};
 	my $elements = $self->{elements};
 	
-	my $tree = MediaWiki::DumpFile::XML::Element->new(read_tree($reader));
-	
-	#CompactTree leaves us in an unknown spot after it's done
-	#slurping up data - get ourselves back into sync with
-	#the position of the reader
-	my $depth = $reader->depth;
-	splice(@$elements, $depth);
+	my $tree = MediaWiki::DumpFile::XML::Element->new(_read_tree($reader));
 	
 	if (! defined($tree)) {
 		$self->{finished} = 1;
@@ -118,7 +131,7 @@ sub do_subtree {
 	return $tree;
 }
 
-sub read_element {
+sub _read_element {
 	my ($self) = @_;
 	my $reader = $self->{reader};
 	my $new;
@@ -143,7 +156,7 @@ sub read_element {
 	return MediaWiki::DumpFile::XML::Element->new($new);
 }
 
-sub read_tree {
+sub _read_tree {
 	my ($r) = @_;
 	
 	return XML::CompactTree::XS::readSubtreeToPerl($r, 0);
@@ -171,50 +184,19 @@ sub new {
 	return $tree;
 }
 
-sub get_element {
-	my ($tree, $path) = @_;
-	my @path = split('/', $path);
-	my $p = [ $tree ];
-	my $target = pop(@path);	
-	my $found;
+sub get_elements {
+	my ($self, $path) = @_;
 	my @results;
-	
-	#remove empty data caused by leading /
-	shift(@path);
 
-	foreach (@path) {
-		$found = 0;
-	
-		for(my $i = 0; $i < scalar(@$p); $i++) {
-			my $one = $p->[$i];
-			
-			if ($one->[0] != XML_READER_TYPE_ELEMENT) {
-				next;
-			} elsif ($one->[1] eq $_) {
-				$p = $one->[4];
-				$found = 1;
-				last;
-			}		
-		}
-		
-		return undef unless $found;
-	}
+	$path = '' unless defined $path;
 
-	for(my $i = 0; $i < scalar(@$p); $i++) {
-		next unless $p->[$i]->[0] == XML_READER_TYPE_ELEMENT;
-		
-		if ($p->[$i]->[1] eq $target) {
-			push(@results, MediaWiki::DumpFile::XML::Element->new($p->[$i]));
-		}
-	}	
+	@results = $self->_recursive_get_child_elements(split('/', $path));
 	
-	if (! scalar(@results)) {
-		return undef;
-	} elsif (! wantarray()) {
-		return pop(@results);
-	} else {
-		return (@results);
+	if (wantarray()) {
+		return @results;
 	}
+	
+	return shift(@results);
 }
 
 sub name {
@@ -226,16 +208,23 @@ sub name {
 sub child_nodes {
 	my ($tree) = @_;
 	
+	if (wantarray()) {
+		if (! defined($tree->[4])) {
+			return ();
+		}
+		
+		return @{$tree->[4]};
+	}
+	
 	return $tree->[4];
 }
 
 sub text {
-	my ($p) = @_;
+	my ($tree) = @_;
+	my $p = $tree->[4]; 
 	my @text;
-	
-	$p = $p->child_nodes;
-	
-	return undef unless defined $p;
+		
+	return '' unless defined $p;
 
 	for(my $i = 0; $i < scalar(@$p); $i++) {
 		if ($p->[$i]->[0] == XML_READER_TYPE_TEXT || $p->[$i]->[0] == XML_READER_TYPE_CDATA) {
@@ -250,8 +239,46 @@ sub attributes {
 	my ($tree) = @_;
 	my $attr = $tree->[3];
 	
-	return {} unless defined $attr;
+	$attr = {} unless defined $attr;
+
+	if (wantarray()) {
+		return %$attr;
+	}
+	
 	return $attr;
 }
+
+sub attribute {
+	return $_[0]->attributes->{$_[1]};
+}
+
+#private methods
+sub _extract_elements {
+	return grep { $_->[0] == XML_READER_TYPE_ELEMENT} @_;	
+}
+
+sub _recursive_get_child_elements {
+	my ($tree, @path) = @_;
+	my $child_nodes = $tree->[4];
+	my @results;
+	my $target;
+	
+	if (! scalar(@path)) {
+		return MediaWiki::DumpFile::XML::Element->new($tree);
+	}
+	
+	$target = shift(@path);
+	
+	return () unless defined $child_nodes;
+	
+	foreach (_extract_elements(@$child_nodes)) {
+		next unless $_->[1] eq $target;
+		
+		push(@results, _recursive_get_child_elements($_, @path));
+	}
+	
+	return @results;
+}
+
 
 1;

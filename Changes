@@ -1,5 +1,19 @@
 Revision history for MediaWiki-DumpFile
 
+0.0.9
+  * Added support for dump files with versions
+    less than 3 and for versions equal to
+    0.4 with support for the redirect
+    feature of the 0.4 dump file
+  * Refactored interface to ::XML
+    and getting it ready to be split
+    off to its own CPAN module
+  * Changed the constructor class
+    to require the parsing modules
+    when the methods are invoked
+    instead of use()ing them
+    when the module is loaded. 
+
 0.0.8
   * Added minor method to ::Pages::Revision
   * Created ::Pages::Revision::Contributor
