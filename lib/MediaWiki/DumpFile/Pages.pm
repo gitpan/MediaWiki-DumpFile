@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile::Pages;
 
-our $VERSION = '0.0.9';
+our $VERSION = '0.0.10';
 
 use strict;
 use warnings;
@@ -8,8 +8,8 @@ use Scalar::Util qw(reftype);
 use Carp qw(croak);
 use Data::Dumper;
 
-use MediaWiki::DumpFile::XML;
 use XML::LibXML::Reader;
+use MediaWiki::DumpFile::XML;
 
 sub new {
 	my ($class, $input) = @_;
@@ -67,6 +67,7 @@ sub _init {
 	
 	if ($version > 0.2) {
 		$self->{siteinfo} = $xml->next;
+		
 		bless($self, 'MediaWiki::DumpFile::PagesSiteinfo');
 	} elsif ($version > 0.4) {
 		die "version $version dump file is not supported";
@@ -161,6 +162,11 @@ sub revision {
 }
 
 package MediaWiki::DumpFile::Pages::Page000004000;
+
+use base qw(MediaWiki::DumpFile::Pages::Page);
+
+use strict;
+use warnings;
 
 sub redirect {
 	return 1 if defined $_[0]->{tree}->get_elements('redirect');

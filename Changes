@@ -1,5 +1,11 @@
 Revision history for MediaWiki-DumpFile
 
+0.0.10
+  * Fixed bug in subclassing of pages object
+    to handle version 0.4 dump files
+  * Fixed incorrect dependencies listed in 
+    Makefile.PL
+
 0.0.9
   * Added support for dump files with versions
     less than 3 and for versions equal to

@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile;
 
-our $VERSION = '0.0.9';
+our $VERSION = '0.0.10';
 
 use warnings;
 use strict;
