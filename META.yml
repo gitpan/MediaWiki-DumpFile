@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               MediaWiki-DumpFile
-version:            0.0.10
+version:            0.0.11
 abstract:           Process various dump files from a MediaWiki instance
 author:
     - "Tyler Riddle <triddle@gmail.com>"
@@ -11,11 +11,12 @@ configure_requires:
 build_requires:
     ExtUtils::MakeMaker:  0
 requires:
-    Data::Compare:  1.2101
-    Scalar::Util:   1.21
-    Test::More:     0.94
-    Test::Simple:   0.94
-    XML::LibXML:    1.70
+    Data::Compare:        1.2101
+    Scalar::Util:         1.21
+    Test::More:           0.94
+    Test::Simple:         0.94
+    XML::CompactTree::XS:  0.02
+    XML::LibXML:          1.70
 no_index:
     directory:
         - t
