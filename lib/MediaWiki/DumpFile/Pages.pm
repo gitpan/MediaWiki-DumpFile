@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile::Pages;
 
-our $VERSION = '0.0.10';
+our $VERSION = '0.1.1';
 
 use strict;
 use warnings;
@@ -8,8 +8,7 @@ use Scalar::Util qw(reftype);
 use Carp qw(croak);
 use Data::Dumper;
 
-use XML::LibXML::Reader;
-use MediaWiki::DumpFile::XML;
+use XML::TreePuller;
 
 sub new {
 	my ($class, $input) = @_;
@@ -20,9 +19,9 @@ sub new {
 	if (! defined($input)) {
 		croak "must specify a file path or open file handle object";
 	} elsif (! defined($reftype)) {
-		$xml = MediaWiki::DumpFile::XML->new(location => $input);
+		$xml = XML::TreePuller->new(location => $input);
 	} elsif ($reftype eq 'GLOB') {
-		$xml = MediaWiki::DumpFile::XML->new(IO => $input);
+		$xml = XML::TreePuller->new(IO => $input);
 	} else {
 		croak "must specify a file path or open file handle object";
 	}
@@ -59,7 +58,7 @@ sub _init {
 	my $xml = $self->{xml};
 	my $version;
 	
-	$xml->config('/mediawiki', 'element');
+	$xml->config('/mediawiki', 'short');
 	$xml->config('/mediawiki/siteinfo', 'subtree');
 	$xml->config('/mediawiki/page', 'subtree');
 	

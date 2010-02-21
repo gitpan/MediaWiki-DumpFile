@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               MediaWiki-DumpFile
-version:            0.0.14
+version:            0.1.1_01
 abstract:           Process various dump files from a MediaWiki instance
 author:
     - "Tyler Riddle <triddle@gmail.com>"
@@ -16,7 +16,7 @@ requires:
     Test::More:           0.94
     Test::Simple:         0.94
     XML::CompactTree::XS:  0.02
-    XML::LibXML:          1.70
+    XML::TreePuller:      0.0.1
 no_index:
     directory:
         - t

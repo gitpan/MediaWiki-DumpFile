@@ -15,7 +15,7 @@ WriteMakefile(
         'Test::More' => '0.94',
         'Test::Simple' => '0.94',
         'Scalar::Util' => '1.21',
-        'XML::LibXML' => '1.70',
+        'XML::TreePuller' => '0.0.1',
         'XML::CompactTree::XS' => '0.02',
         'Data::Compare' => '1.2101',
     },
