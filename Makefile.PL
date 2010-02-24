@@ -16,7 +16,7 @@ WriteMakefile(
         'Test::Simple' => '0.94',
         'Scalar::Util' => '1.21',
         'XML::TreePuller' => '0.0.1',
-        'XML::CompactTree::XS' => '0.02',
+        'XML::CompactTree::XS' => '0.02', #gives us a speed boost
         'Data::Compare' => '1.2101',
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },

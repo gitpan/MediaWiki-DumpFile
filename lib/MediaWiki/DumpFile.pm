@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile;
 
-our $VERSION = '0.1.1_01';
+our $VERSION = '0.1.1';
 
 use warnings;
 use strict;
@@ -83,8 +83,7 @@ Parse::MediaWikiDump.
 This is currently bleeding edge software. API changes may happen in the future (but will try
 to be avoided), there may be bugs, it might not work at all, etc. If you need something well tested
 and stable use Parse::MediaWikiDump instead. If you do encounter issues with this software please
-open a bug report according to the documentation below. See the LIMITATIONS section below for
-what is left to be supported. 
+open a bug report according to the documentation below. 
 
 =head1 FUNCTIONS
 
@@ -124,14 +123,6 @@ October 21, 2009.
 =item Parse-MediaWikiDump: 3.2 MiB/sec
 
 =back
-
-=head1 LIMITATIONS
-
-This software is not completed yet; specifically the object for parsing the pages dump file
-does not support all of the data made available in the dump file. The most commonly used
-information should already be supported and patches are always welcome to add support
-before I can get around to it. See the documentation for MediaWiki::DumpFile::Pages
-for up to date information on what is and what is not supported at this time. 
 
 =head1 AUTHOR
 

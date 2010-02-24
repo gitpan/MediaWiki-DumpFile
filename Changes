@@ -1,5 +1,11 @@
 Revision history for MediaWiki-DumpFile
 
+0.1.1
+  * Split off MediaWiki::DumpFile::XML into XML::TreePuller
+    and made it available on CPAN
+  * Removed LIMITATIONS section of MediaWiki::DumpFile 
+    documentation
+
 0.0.10
   * Fixed bug in subclassing of pages object
     to handle version 0.4 dump files
