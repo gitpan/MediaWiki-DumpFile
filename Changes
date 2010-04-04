@@ -1,5 +1,11 @@
 Revision history for MediaWiki-DumpFile
 
+0.1.2
+  * Fixed bug #55758 - When calling subroutine comment ($revision->comment), 
+    it throws null pointer exception.
+  * Added check to constructor for ::Pages to complain if the input
+    specified as a file is not really in the filesystem
+
 0.1.1
   * Split off MediaWiki::DumpFile::XML into XML::TreePuller
     and made it available on CPAN

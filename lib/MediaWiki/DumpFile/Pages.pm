@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile::Pages;
 
-our $VERSION = '0.1.1';
+our $VERSION = '0.1.2';
 
 use strict;
 use warnings;
@@ -19,6 +19,10 @@ sub new {
 	if (! defined($input)) {
 		croak "must specify a file path or open file handle object";
 	} elsif (! defined($reftype)) {
+		if (! -e $input) {
+			croak("$input is not a file");
+		}
+		
 		$xml = XML::TreePuller->new(location => $input);
 	} elsif ($reftype eq 'GLOB') {
 		$xml = XML::TreePuller->new(IO => $input);
@@ -79,20 +83,29 @@ package MediaWiki::DumpFile::PagesSiteinfo;
 
 use base qw(MediaWiki::DumpFile::Pages);
 
+use MediaWiki::DumpFile::Pages::Lib qw(_safe_text); 
+
+sub _site_info {
+	my ($self, $name) = @_;
+	my $siteinfo = $self->{siteinfo};
+	
+	return _safe_text($siteinfo, $name);
+}
+
 sub sitename {
-	return $_[0]->_siteinfo('sitename');
+	return $_[0]->_site_info('sitename');
 }
 
 sub base {
-	return $_[0]->_siteinfo('base');
+	return $_[0]->_site_info('base');
 }
 
 sub generator {
-	return $_[0]->_siteinfo('generator');
+	return $_[0]->_site_info('generator');
 }
 
 sub case {
-	return $_[0]->_siteinfo('case');
+	return $_[0]->_site_info('case');
 }
 
 sub namespaces {
@@ -110,19 +123,13 @@ sub namespaces {
 	return %namespaces;
 }
 
-sub _siteinfo {
-	my ($self, $name) = @_;
-	my $siteinfo = $self->{siteinfo};
-	
-	return $siteinfo->get_elements("$name")->text;
-}
-
-
 package MediaWiki::DumpFile::Pages::Page;
 
 use strict;
 use warnings;
 use Data::Dumper;
+
+use MediaWiki::DumpFile::Pages::Lib qw(_safe_text); 
 
 sub new {
 	my ($class, $element, $version) = @_;
@@ -138,11 +145,11 @@ sub new {
 }
 
 sub title {
-	return $_[0]->{tree}->get_elements('title')->text;
+	return _safe_text($_[0]->{tree}, 'title');
 }
 
 sub id {
-	return $_[0]->{tree}->get_elements('id')->text;
+	return _safe_text($_[0]->{tree}, 'id');
 }
 
 sub revision {
@@ -178,6 +185,8 @@ package MediaWiki::DumpFile::Pages::Page::Revision;
 use strict;
 use warnings;
 
+use MediaWiki::DumpFile::Pages::Lib qw(_safe_text); 
+
 sub new {
 	my ($class, $tree) = @_;
 	my $self = { tree => $tree };
@@ -186,19 +195,19 @@ sub new {
 }
 
 sub text {
-	return $_[0]->{tree}->get_elements('text')->text;
+	return _safe_text($_[0]->{tree}, 'text');
 }
 
 sub id {
-	return $_[0]->{tree}->get_elements('id')->text;
+	return _safe_text($_[0]->{tree}, 'id');
 }
 
 sub timestamp {
-	return $_[0]->{tree}->get_elements('timestamp')->text;
+	return _safe_text($_[0]->{tree}, 'timestamp');
 }
 
 sub comment {
-	return $_[0]->{tree}->get_elements('comment')->text;
+	return _safe_text($_[0]->{tree}, 'comment');
 } 
 
 sub minor {

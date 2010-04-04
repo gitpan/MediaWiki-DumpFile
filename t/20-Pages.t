@@ -52,7 +52,7 @@ sub test_one {
 	ok($revision->text eq 'Text Test Value');
 	ok($revision->id == 47084);
 	ok($revision->timestamp eq '2005-07-09T18:41:10Z');
-	ok($revision->comment eq 'Comment Test Value');
+	ok($revision->comment eq ''); #bug #55758
 	ok($revision->minor == 1);
 	ok($page->revision->contributor->username eq 'Username Test Value');
 	ok($page->revision->contributor->id == 1292);
