@@ -5,6 +5,7 @@ README
 lib/MediaWiki/DumpFile.pm
 lib/MediaWiki/DumpFile/SQL.pm
 lib/MediaWiki/DumpFile/Pages.pm
+lib/MediaWiki/DumpFile/Pages/Lib.pm
 lib/MediaWiki/DumpFile/FastPages.pm
 t/20-FastPages.t
 t/20-Pages.t
