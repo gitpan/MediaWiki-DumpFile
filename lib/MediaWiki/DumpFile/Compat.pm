@@ -2,7 +2,8 @@
 
 #Parse::MediaWikiDump compatibility
 
-package Parse::MediaWikiDump;
+package #go away indexer! 
+	Parse::MediaWikiDump;
 
 use strict;
 use warnings;
@@ -27,7 +28,8 @@ sub links {
 	return Parse::MediaWikiDump::Links->new(@_);
 }
 
-package Parse::MediaWikiDump::Links;
+package #go away indexer! 
+	Parse::MediaWikiDump::Links;
 
 use strict; 
 use warnings;
@@ -63,7 +65,8 @@ sub next {
 	return Parse::MediaWikiDump::link->new($next);
 }
 
-package Parse::MediaWikiDump::link;
+package #go away indexer! 
+	Parse::MediaWikiDump::link;
 
 use strict; 
 use warnings;
@@ -88,7 +91,8 @@ sub to {
 	return $_[0]->{pl_title};
 }
 
-package Parse::MediaWikiDump::Revisions;
+package #go away indexer! 
+	Parse::MediaWikiDump::Revisions;
 
 use strict;
 use warnings;
@@ -211,7 +215,8 @@ sub next {
 	return shift(@$queue);
 }
 
-package Parse::MediaWikiDump::Pages;
+package #go away indexer! 
+	Parse::MediaWikiDump::Pages;
 
 use strict;
 use warnings;
@@ -236,7 +241,8 @@ sub next {
 }
 
 
-package Parse::MediaWikiDump::page;
+package #go away indexer! 
+	Parse::MediaWikiDump::page;
 
 use strict;
 use warnings;
