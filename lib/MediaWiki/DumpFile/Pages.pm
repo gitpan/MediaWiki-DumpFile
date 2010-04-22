@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile::Pages;
 
-our $VERSION = '0.1.2';
+our $VERSION = '0.1.3_01';
 
 use strict;
 use warnings;
@@ -49,6 +49,10 @@ sub next {
 	return undef unless defined $new;
 	
 	return MediaWiki::DumpFile::Pages::Page->new($new, $version);
+}
+
+sub current_byte {
+	return $_[0]->{xml}->reader->byteConsumed;
 }
 
 sub version {

@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile;
 
-our $VERSION = '0.1.2';
+our $VERSION = '0.1.3_01';
 
 use warnings;
 use strict;
@@ -68,22 +68,23 @@ MediaWiki::DumpFile - Process various dump files from a MediaWiki instance
   $fastpages = $mw->fastpages($filename);
   $fastpages = $mw->fastpages(\*FH);
   
+  use MediaWiki::DumpFile::Compat;
+  
+  $pmwd = Parse::MediaWikiDump->new;
+  
 =head1 ABOUT
 
 This module is used to parse various dump files from a MediaWiki instance. The most
 likely case is that you will want to be parsing content at http://download.wikimedia.org/backup-index.html 
 provided by WikiMedia which includes the English and all other language Wikipedias. 
 
-This module could also be considered Parse::MediaWikiDump version 2. It has been created
-as a seperate distribution to improve the API with out breaking existing code that is using
-Parse::MediaWikiDump. 
+This module is the successor to Parse::MediaWikiDump acting as a full replacement in feature set
+and providing a backwards compatible API that is faster than Parse::MediaWikiDump is (see MediaWiki::DumpFile::Compat). 
 
 =head1 STATUS
 
-This is currently bleeding edge software. API changes may happen in the future (but will try
-to be avoided), there may be bugs, it might not work at all, etc. If you need something well tested
-and stable use Parse::MediaWikiDump instead. If you do encounter issues with this software please
-open a bug report according to the documentation below. 
+This software is maturing into a stable and tested state with known users; the API is
+stable and will not be changed. 
 
 =head1 FUNCTIONS
 
