@@ -1,4 +1,7 @@
 Revision history for MediaWiki-DumpFile
+0.1.3
+  * Added in compatibility with Parse::MediaWikiDump via
+    MediaWiki::DumpFile::Compat
 
 0.1.2
   * Fixed bug #55758 - When calling subroutine comment ($revision->comment), 

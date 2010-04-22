@@ -98,7 +98,7 @@ use MediaWiki::DumpFile::Pages;
 
 sub new {
 	my ($class, $source) = @_;
-	my $self = {};
+	my $self = { queue => [] };
 	my $mediawiki;
 	
 	$Carp::CarpLevel++;
@@ -178,6 +178,20 @@ sub size {
 	
 }
 
+sub get_category_anchor {
+	my ($self) = @_;
+	my $namespaces = $self->namespaces;
+
+	foreach (@$namespaces) {
+		my ($id, $name) = @$_;
+		if ($id == 14) {
+			return $name;
+		}
+	}	
+	
+	return undef;
+}
+
 sub next {
 	my $self = $_[0];
 	my $queue = $_[0]->{queue};
@@ -195,20 +209,6 @@ sub next {
 	}
 	
 	return shift(@$queue);
-}
-
-sub get_category_anchor {
-	my ($self) = @_;
-	my $namespaces = $self->namespaces;
-
-	foreach (@$namespaces) {
-		my ($id, $name) = @$_;
-		if ($id == 14) {
-			return $name;
-		}
-	}	
-	
-	return undef;
 }
 
 package Parse::MediaWikiDump::Pages;
@@ -359,7 +359,7 @@ MediaWiki::DumpFile::Compat - Compatibility with Parse::MediaWikiDump
 =head1 ABOUT
 
 This is a compatibility layer with Parse::MediaWikiDump; instead of "use Parse::MediaWikiDump;" 
-you "use MediaWiki::DumpFile::Compat". Compatibility is verified by using the existing Parse::MediaWikiDump test
+you "use MediaWiki::DumpFile::Compat;". Compatibility is verified by using the existing Parse::MediaWikiDump test
 suite with the following adjustments:
 
 =head2 Parse::MediaWikiDump::Pages
@@ -385,10 +385,6 @@ Order of values from next() is now in identical order as SQL file
 =head1 LIMITATIONS
 
 =over 4
-
-=item 
-
-There currently is no support for Parse::MediaWikiDump::Revisions
 
 =item 
 

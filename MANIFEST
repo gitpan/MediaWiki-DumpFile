@@ -14,7 +14,7 @@ t/20-SQL.t
 t/00-load.t
 t/90-compat-links.t
 t/90-compat-pages.t
-t/90-compat-links.t
+t/90-compat-revisions.t
 t/95-compat-pages-single_revision_only.t
 t/specieswiki-20091204-user_groups.data
 t/specieswiki-20091204-user_groups.sql

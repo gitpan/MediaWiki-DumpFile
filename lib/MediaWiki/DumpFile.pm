@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile;
 
-our $VERSION = '0.1.3_01';
+our $VERSION = '0.1.3';
 
 use warnings;
 use strict;
@@ -117,9 +117,11 @@ October 21, 2009.
 
 =over 4
 
-=item MediaWiki-DumpFile-FastPages: 26.4 MiB/sec
+=item MediaWiki-DumpFile-FastPages: 26.16 MiB/sec
 
-=item MediaWiki-DumpFile-Pages: 10.6 MiB/sec
+=item MediaWiki-DumpFile-Pages: 8.32 MiB/sec
+
+=item MediaWiki-DumpFile-Compat: 7.26 MiB/sec
 
 =item Parse-MediaWikiDump: 3.2 MiB/sec
 
