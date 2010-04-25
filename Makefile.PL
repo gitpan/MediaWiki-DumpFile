@@ -15,9 +15,11 @@ WriteMakefile(
         'Test::More' => '0.94',
         'Test::Simple' => '0.94',
         'Scalar::Util' => '1.21',
-        'XML::TreePuller' => '0.0.1',
+        'XML::TreePuller' => '0.1.0',
         'XML::CompactTree::XS' => '0.02', #gives us a speed boost
         'Data::Compare' => '1.2101',
+        'Test::Exception' => '0.27',
+        'File::Find::Rule' => '0.32',
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'MediaWiki-DumpFile-*' },

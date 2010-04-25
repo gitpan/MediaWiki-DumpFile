@@ -1,5 +1,9 @@
 Revision history for MediaWiki-DumpFile
 
+0.1.6
+  * API changes in XML::TreePuller
+  * Added some missing deps to Makefile.PL
+
 0.1.5
   * Made the CPAN indexer unhappy with me
 
@@ -11,7 +15,7 @@ Revision history for MediaWiki-DumpFile
   * Fixed bug #55758 - When calling subroutine comment ($revision->comment), 
     it throws null pointer exception.
   * Added check to constructor for ::Pages to complain if the input
-    specified as a file is not really in the filesystem
+    specified as a file is not really in the file system
 
 0.1.1
   * Split off MediaWiki::DumpFile::XML into XML::TreePuller

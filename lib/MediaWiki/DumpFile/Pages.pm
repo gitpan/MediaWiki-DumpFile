@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile::Pages;
 
-our $VERSION = '0.1.3_01';
+our $VERSION = '0.1.6_01';
 
 use strict;
 use warnings;
@@ -66,9 +66,9 @@ sub _init {
 	my $xml = $self->{xml};
 	my $version;
 	
-	$xml->config('/mediawiki', 'short');
-	$xml->config('/mediawiki/siteinfo', 'subtree');
-	$xml->config('/mediawiki/page', 'subtree');
+	$xml->iterate_at('/mediawiki', 'short');
+	$xml->iterate_at('/mediawiki/siteinfo', 'subtree');
+	$xml->iterate_at('/mediawiki/page', 'subtree');
 	
 	$version = $self->{version} = $xml->next->attribute('version');
 	
@@ -77,7 +77,7 @@ sub _init {
 		
 		bless($self, 'MediaWiki::DumpFile::PagesSiteinfo');
 	} elsif ($version > 0.4) {
-		die "version $version dump file is not supported";
+		croak "version $version dump file is not supported";
 	}
 		
 	return undef;
@@ -86,6 +86,8 @@ sub _init {
 package MediaWiki::DumpFile::PagesSiteinfo;
 
 use base qw(MediaWiki::DumpFile::Pages);
+
+use Data::Dumper;
 
 use MediaWiki::DumpFile::Pages::Lib qw(_safe_text); 
 
@@ -113,18 +115,13 @@ sub case {
 }
 
 sub namespaces {
-	my %namespaces;
+	my ($self) = @_;
+	my @e = $self->{siteinfo}->get_elements('namespaces/namespace');
+	my %ns;
+	
+	map({ $ns{ $_->attribute('key') } = $_->text } @e);
 
-	foreach ($_[0]->{siteinfo}->get_elements('namespaces/namespace')) {
-		my ($name, $id);
-		
-		$name = $_->text;
-		$id = $_->attribute('key');
-		
-		$namespaces{$id} = $name;
-	}
-
-	return %namespaces;
+	return %ns;
 }
 
 package MediaWiki::DumpFile::Pages::Page;

@@ -2,6 +2,10 @@
 
 #Parse::MediaWikiDump compatibility
 
+package MediaWiki::DumpFile::Compat;
+
+our $VERSION = '0.1.3';
+
 package #go away indexer! 
 	Parse::MediaWikiDump;
 
@@ -365,8 +369,9 @@ MediaWiki::DumpFile::Compat - Compatibility with Parse::MediaWikiDump
 =head1 ABOUT
 
 This is a compatibility layer with Parse::MediaWikiDump; instead of "use Parse::MediaWikiDump;" 
-you "use MediaWiki::DumpFile::Compat;". Compatibility is verified by using the existing Parse::MediaWikiDump test
-suite with the following adjustments:
+you "use MediaWiki::DumpFile::Compat;". The Parse::MediaWikiDump module itself is well documented
+so it will not be reproduced here. Compatibility is verified by using the existing 
+Parse::MediaWikiDump test suite with the following adjustments:
 
 =head2 Parse::MediaWikiDump::Pages
 
