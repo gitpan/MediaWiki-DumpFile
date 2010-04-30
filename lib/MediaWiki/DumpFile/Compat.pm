@@ -4,7 +4,7 @@
 
 package MediaWiki::DumpFile::Compat;
 
-our $VERSION = '0.1.3';
+our $VERSION = '0.1.7';
 
 package #go away indexer! 
 	Parse::MediaWikiDump;
@@ -175,15 +175,7 @@ sub current_byte {
 }
 
 sub size {
-	my $source = $_[0]->{source};
-	
-	unless(ref($source) eq '') {
-		return undef;
-	}
-	
-	my @stat = stat($source);
-	return $stat[7];
-	
+	return $_[0]->{mediawiki}->size;
 }
 
 sub get_category_anchor {
@@ -370,12 +362,23 @@ MediaWiki::DumpFile::Compat - Compatibility with Parse::MediaWikiDump
 
 This is a compatibility layer with Parse::MediaWikiDump; instead of "use Parse::MediaWikiDump;" 
 you "use MediaWiki::DumpFile::Compat;". The Parse::MediaWikiDump module itself is well documented
-so it will not be reproduced here. Compatibility is verified by using the existing 
-Parse::MediaWikiDump test suite with the following adjustments:
+so it will not be reproduced here. The benefit of using the new compatibility module is an increased
+processing speed - see the MediaWiki::DumpFile main documentation for benchmark results. 
+
+Compatibility is verified by using the existing Parse::MediaWikiDump test suite with the 
+following adjustments:
 
 =head2 Parse::MediaWikiDump::Pages
 
 =over 4
+
+=item
+
+Parse::MediaWikiDump did not need to load all revisions of an article into memory when processing
+dump files that contain more than one revision but this compatibility module does. The API does not
+change but the memory requirements for parsing those dump files certainly do. It is, however, highly
+unlikely that you will notice this as most of the documents with many revisions per article are so large
+that Parse::MediaWikiDump would not have been able to parse them in any reasonable timeframe. 
 
 =item 
 
@@ -389,7 +392,17 @@ The order of the results from namespaces() is now sorted by the namespace ID ins
 
 =item 
 
-Order of values from next() is now in identical order as SQL file
+Order of values from next() is now in identical order as SQL file.
+
+=back
+
+=head1 BUGS
+
+=over 4
+
+=item
+
+The value of current_byte() wraps at around 2 gigabytes of input XML; see http://rt.cpan.org/Public/Bug/Display.html?id=56843
 
 =back
 
@@ -399,6 +412,6 @@ Order of values from next() is now in identical order as SQL file
 
 =item 
 
-This compatibility layer is not yet well tested
+This compatibility layer is not yet well tested.
 
 =back

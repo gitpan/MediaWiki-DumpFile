@@ -1,17 +1,21 @@
 use strict;
 use warnings;
 
-use Test::Simple tests => 84;
+use Test::Simple tests => 89;
 use Data::Compare; 
 use Data::Dumper;
 
 use MediaWiki::DumpFile;
+
+our $TEST = 'file';
 
 my $test_data = "t/pages_test.xml";
 
 my $mw = MediaWiki::DumpFile->new;
 my $p = $mw->pages($test_data);
 test_suite($p);
+
+$TEST = 'filehandle';
 
 die "die could not open $test_data: $!" unless open(INPUT, $test_data);
 $p = $mw->pages(\*INPUT);
@@ -28,6 +32,13 @@ sub test_suite {
 	ok($p->case eq 'Case Test Value');
 	%namespace_test_against = $p->namespaces;
 	ok(Compare(\%namespace_test_values, \%namespace_test_against));
+	
+	ok(defined($p->current_byte));
+	ok($p->current_byte != 0);
+	
+	if ($TEST ne 'filehandle') {
+		ok($p->size == 2259);
+	}
 
 	test_one($p->next);
 	test_two($p->next);

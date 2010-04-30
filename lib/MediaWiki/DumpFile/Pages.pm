@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile::Pages;
 
-our $VERSION = '0.1.6_01';
+our $VERSION = '0.1.7';
 
 use strict;
 use warnings;
@@ -24,6 +24,8 @@ sub new {
 		}
 		
 		$xml = XML::TreePuller->new(location => $input);
+		$self->{input} = $input;
+		
 	} elsif ($reftype eq 'GLOB') {
 		$xml = XML::TreePuller->new(IO => $input);
 	} else {
@@ -49,6 +51,17 @@ sub next {
 	return undef unless defined $new;
 	
 	return MediaWiki::DumpFile::Pages::Page->new($new, $version);
+}
+
+sub size {
+	my $source = $_[0]->{input};
+	
+	unless(defined($source) && ref($source) eq '') {
+		return undef;
+	}
+	
+	my @stat = stat($source);
+	return $stat[7];
 }
 
 sub current_byte {
@@ -358,6 +371,15 @@ string value. Requires a dump file of at least version 0.3.
 
 Returns an instance of MediaWiki::DumpFile::Pages::Page or undef if there is no more pages
 available. 
+
+=head2 size
+
+Returns the size of the input file in bytes or if the input specified is a reference
+to a file handle it returns undef. 
+
+=head2 current_byte
+
+Returns the number of bytes of XML that have been successfully parsed. 
 
 =head1 MediaWiki::DumpFile::Pages::Page
 

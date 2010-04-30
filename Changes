@@ -1,5 +1,9 @@
 Revision history for MediaWiki-DumpFile
 
+0.1.7
+  * Added current_byte() and size() method to ::Pages
+  * Documented bug #56843 in ::Compat
+
 0.1.6
   * API changes in XML::TreePuller
   * Added some missing deps to Makefile.PL
