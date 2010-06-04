@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile::SQL;
 
-our $VERSION = '0.0.6';
+our $VERSION = '0.1.8';
 
 use strict;
 use warnings;
@@ -30,7 +30,6 @@ sub new {
 	$self->create_type_map;
 	$self->open_file;
 	$self->parse_table;
-	$self->find_lock;
 	
 	return $self;
 }
@@ -128,21 +127,6 @@ sub parse_table {
 	$self->{table_statement} = $table_statement;
 	
 	return 1;
-}
-
-sub find_lock {
-	my ($self) = @_;
-	my $fh = $self->{fh};
-	my $found = 0;
-	
-	while(<$fh>) {
-		if (m/^LOCK TABLES/) {
-			$found = 1;
-			last;
-		}
-	}
-	
-	$found or die "expected LOCK TABLES";
 }
 
 #returns false at EOF or true if more data was parsed

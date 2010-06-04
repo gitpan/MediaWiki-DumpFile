@@ -1,5 +1,8 @@
 Revision history for MediaWiki-DumpFile
 
+0.1.8
+  * Resolved bug #58107 "MediaWiki::DumpFile::SQL, not all dumps have LOCK"
+
 0.1.7
   * Added current_byte() and size() method to ::Pages
   * Documented bug #56843 in ::Compat
