@@ -4,7 +4,7 @@
 
 package MediaWiki::DumpFile::Compat;
 
-our $VERSION = '0.1.7';
+our $VERSION = '0.2.0';
 
 package #go away indexer! 
 	Parse::MediaWikiDump;
@@ -105,16 +105,15 @@ use Data::Dumper;
 use MediaWiki::DumpFile::Pages;
 
 sub new {
-	my ($class, $source) = @_;
+	my ($class, @args) = @_;
 	my $self = { queue => [] };
 	my $mediawiki;
 	
 	$Carp::CarpLevel++;
-	$mediawiki = MediaWiki::DumpFile::Pages->new($source);
+	$mediawiki = MediaWiki::DumpFile::Pages->new(@args);
 	$Carp::CarpLevel--;
 	
 	$self->{mediawiki} = $mediawiki;
-	$self->{source} = $source;
 	
 	return bless($self, $class);
 }
@@ -181,15 +180,23 @@ sub size {
 sub get_category_anchor {
 	my ($self) = @_;
 	my $namespaces = $self->namespaces;
+	my $cache = $self->{cache};
+	my $ret = undef;
+	
+	if (defined($cache->{category_anchor})) {
+		return $cache->{category_anchor};
+	}
 
 	foreach (@$namespaces) {
 		my ($id, $name) = @$_;
 		if ($id == 14) {
-			return $name;
+			$ret = $name;
 		}
 	}	
 	
-	return undef;
+	$self->{cache}->{category_anchor} = $ret;
+	
+	return $ret;
 }
 
 sub next {
@@ -300,6 +307,10 @@ sub namespace {
 	my $title = $self->title;
 	my $namespace = '';
 	
+	if (defined($self->{cache}->{namespace})) {
+		return $self->{cache}->{namespace};
+	}
+	
 	if ($title =~ m/^([^:]+):(.*)/) {
 		foreach (@{ $self->{namespaces} } ) {
 			my ($num, $name) = @$_;
@@ -310,18 +321,27 @@ sub namespace {
 		}
 	}
 
+	$self->{cache}->{namespace} = $namespace;
+
 	return $namespace;
 }
 
 sub redirect {
 	my ($self) = @_;
 	my $text = $self->text;
+	my $ret;
+	
+	return $self->{cache}->{redirect} if defined $self->{cache}->{redirect};
 
 	if ($$text =~ m/^#redirect\s*:?\s*\[\[([^\]]*)\]\]/i) {
-		return $1;
+		$ret = $1;
 	} else {
-		return undef;
+		$ret = undef;
 	}
+	
+	$self->{cache}->{redirect} = $ret;
+	
+	return $ret;
 }
 
 sub categories {
@@ -329,18 +349,25 @@ sub categories {
 	my $anchor = $$self{category_anchor};
 	my $text = $self->text;
 	my @cats;
+	my $ret;
 	
-	while($text =~ m/\[\[$anchor:\s*([^\]]+)\]\]/gi) {
+	return $self->{cache}->{categories} if defined $self->{cache}->{categories};
+	
+	while($$text =~ m/\[\[$anchor:\s*([^\]]+)\]\]/gi) {
 		my $buf = $1;
-
+		
 		#deal with the pipe trick
 		$buf =~ s/\|.*$//;
 		push(@cats, $buf);
 	}
 
-	return undef if scalar(@cats) == 0;
+	if (scalar(@cats) == 0) {
+		$ret = undef;
+	} else {
+		$ret = \@cats;
+	}
 
-	return \@cats;
+	return $ret;
 }
 
 
@@ -357,15 +384,73 @@ MediaWiki::DumpFile::Compat - Compatibility with Parse::MediaWikiDump
   use MediaWiki::DumpFile::Compat;
 
   $pmwd = Parse::MediaWikiDump->new;
+
+  $pages = $pmwd->pages('pages-articles.xml');
+  $revisions = $pmwd->revisions('pages-articles.xml');
+  $links = $pmwd->links('links.sql');
   
 =head1 ABOUT
 
-This is a compatibility layer with Parse::MediaWikiDump; instead of "use Parse::MediaWikiDump;" 
-you "use MediaWiki::DumpFile::Compat;". The Parse::MediaWikiDump module itself is well documented
-so it will not be reproduced here. The benefit of using the new compatibility module is an increased
-processing speed - see the MediaWiki::DumpFile main documentation for benchmark results. 
+This software suite provides the tools needed to process the contents of the XML page 
+dump files and the SQL based links dump file from a Mediawiki instance. This is a compatibility 
+layer between MediaWiki::Dumpfile and Parse::MediaWikiDump; 
+instead of "use Parse::MediaWikiDump;" you "use MediaWiki::DumpFile::Compat;". The benefit of
+using the new compatibility module is an increased processing speed - see the 
+MediaWiki::DumpFile::Benchmarks documentation for benchmark results. 
 
-Compatibility is verified by using the existing Parse::MediaWikiDump test suite with the 
+=head1 MORE DOCUMENTATION
+
+The original Parse::MediaWikiDump documentation is also available in this package; it has been updated
+to include new features introduced by MediaWiki::DumpFile. You can find the documentation in the following
+locations:
+
+=over 4
+
+=item MediaWiki::DumpFile::Compat::Pages
+
+=item MediaWiki::DumpFile::Compat::Revisions
+
+=item MediaWiki::DumpFile::Compat::page
+
+=item MediaWiki::DumpFile::Compat::Links
+
+=item MediaWiki::DumpFile::Compat::link
+
+=back
+
+=head1 USAGE
+
+This module is a factory class that allows you to create instances of the individual 
+parser objects. 
+
+=over 4
+
+=item $pmwd->pages
+
+Returns a Parse::MediaWikiDump::Pages object capable of parsing an article XML dump file with one revision per each article.
+
+=item $pmwd->revisions
+
+Returns a Parse::MediaWikiDump::Revisions object capable of parsing an article XML dump file with multiple revisions per each article.
+
+=item $pmwd->links
+
+Returns a Parse::MediaWikiDump::Links object capable of parsing an article links SQL dump file.
+
+=back
+
+=head2 General
+
+All parser creation invocations require a location of source data
+to parse; this argument can be either a filename or a reference to an already
+open filehandle. This entire software suite will die() upon errors in the file or if internal inconsistencies
+have been detected. If this concerns you then you can wrap the portion of your code that uses these calls with eval().
+
+=head1 COMPATIBILITY 
+
+Any deviation of the behavior of MediaWiki::DumpFile::Compat from Parse::MediaWikiDump that is not 
+listed below is a bug. Please report it so that this package can act as a near perfect standin for
+the original. Compatibility is verified by using the existing Parse::MediaWikiDump test suite with the 
 following adjustments:
 
 =head2 Parse::MediaWikiDump::Pages

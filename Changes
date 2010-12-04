@@ -1,5 +1,24 @@
 Revision history for MediaWiki-DumpFile
 
+0.2.0
+  * No longer depends on XML::CompactTree::XS but does recommend it.
+    Just install it via CPAN and it will be used automatically to make things faster. 
+  * Fast mode is here! ::Pages, ::FastPages, and ::Compat::Pages can 
+    all be very fast by giving up support for everything besides
+    titles and the text contents of the first entry in the dump file. 
+  * Resolved bug #63453 "categories() does not work in MediaWiki::DumpFile::Compat"
+  * MediaWiki::DumpFile::Compat did not perform caching on methods like Parse::MediaWikiDump did
+    also from bug #63453
+  * Added in formal error messages for a few events, most notably when
+    the page dump version changes to an unknown one. Now the user is
+    directed to our documentation where there is explicit instructions
+    on how to report a bug and override the case where it will not run
+    with an environment variable
+  * Added the XML benchmarking suite I created to study XML processing speeds
+    to distro; hopefully more people will be interested in the shootout. 
+  * Ported over documentation from Parse::MediaWikiDump giving ::Compat
+    full documentation in this module as well. 
+
 0.1.8
   * Resolved bug #58107 "MediaWiki::DumpFile::SQL, not all dumps have LOCK"
 

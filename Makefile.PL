@@ -3,6 +3,7 @@ use warnings;
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
+	META_MERGE => { recommends  => { 'XML::CompactTree::XS' => '0.02' } },
     NAME                => 'MediaWiki::DumpFile',
     AUTHOR              => q{"Tyler Riddle <triddle@gmail.com>"},
     VERSION_FROM        => 'lib/MediaWiki/DumpFile.pm',
@@ -16,7 +17,6 @@ WriteMakefile(
         'Test::Simple' => '0.94',
         'Scalar::Util' => '1.21',
         'XML::TreePuller' => '0.1.0',
-        'XML::CompactTree::XS' => '0.02', #gives us a speed boost
         'Data::Compare' => '1.2101',
         'Test::Exception' => '0.27',
         'File::Find::Rule' => '0.32',

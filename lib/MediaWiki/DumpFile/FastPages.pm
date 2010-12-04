@@ -2,91 +2,32 @@
 
 package MediaWiki::DumpFile::FastPages;
 
-our $VERSION = '0.0.7';
+our $VERSION = '0.1.9';
 
+use base qw(MediaWiki::DumpFile::Pages);
 use strict;
 use warnings;
-
-use XML::LibXML::Reader;
-use Scalar::Util qw(reftype);
-use Carp qw(croak);
+use Data::Dumper;
 
 sub new {
 	my ($class, $input) = @_;
-	my $self = {};
-	my $reftype = reftype($input);
-	my $reader;
+	use Carp qw(croak);
+	my $self;
 	
 	if (! defined($input)) {
-		croak "must specify a file path or open file handle object";
-	} elsif (! defined($reftype)) {
-		$reader = XML::LibXML::Reader->new(location => $input);
-	} elsif ($reftype eq 'GLOB') {
-		$reader = XML::LibXML::Reader->new(IO => $input);
-	} else {
-		croak "must specify a file path or open file handle object";
+		croak "you must provide either a filename or an already open file handle";
 	}
 	
-	$self->{reader} = $reader;
-	$self->{finished} = 0;
-	
+	$self = $class->SUPER::new(input => $input, fast_mode => 1);
 	bless($self, $class);
 	
 	return $self;
-	
 }
 
 sub next {
 	my ($self) = @_;
-	my $reader = $self->{reader};
-	my ($title, $text);
-	
-	return () if $self->{finished};
-	
-	while(1) {
-		my $type = $reader->nodeType;
-		 
-		if ($type == XML_READER_TYPE_ELEMENT) {
-			if ($reader->name eq 'title') {
-				$title = get_text($reader);
-				last unless $reader->nextElement('text') == 1;
-				next;
-			} elsif ($reader->name eq 'text') {
-				$text = get_text($reader);
-				$reader->nextElement('title');
-				last;
-			}		
-		} 
-		
-		last unless $reader->nextElement == 1;
-	}
-	
-	if (! defined($title) || ! defined($text)) {
-		$self->{finished} = 1;
-		return ();
-	}
-	
-	return ($title, $text);
-}
 
-sub get_text {
-	my ($r) = @_;
-	my @buffer;
-	my $type;
-
-	while($r->nodeType != XML_READER_TYPE_TEXT && $r->nodeType != XML_READER_TYPE_END_ELEMENT) {
-		$r->read or die "could not read";
-	}
-
-	while($r->nodeType != XML_READER_TYPE_END_ELEMENT) {
-		if ($r->nodeType == XML_READER_TYPE_TEXT) {
-			push(@buffer, $r->value);
-		}
-		
-		$r->read or die "could not read";
-	}
-
-	return join('', @buffer);	
+	return $self->_fast_next;	
 }
 
 1;
@@ -95,7 +36,7 @@ __END__
 
 =head1 NAME
 
-MediaWiki::DumpFile::FastPages - Access the title and text of pages from a dump file
+MediaWiki::DumpFile::FastPages - Fastest way to parse a page dump file
 
 =head1 SYNOPSIS
 
@@ -108,8 +49,20 @@ MediaWiki::DumpFile::FastPages - Access the title and text of pages from a dump 
     print "Title: $title\n";
     print "Text: $text\n";
   }
-  
+ 
+=head1 ABOUT
+
+This is a subclass of MediaWiki::DumpFile::Pages that configures
+it to run in fast mode and uses a custom iterator
+that dispenses with the duck-typed MediaWiki::DumpFile::Pages::Page
+object that fast mode uses giving a slight processing speed boost.
+
+See the MediaWiki::DumpFile::Pages documentation for information about fast mode. 
+
 =head1 METHODS
+
+All of the methods of MediaWiki::DumpFile::Pages are also available on this
+subclass.
 
 =head2 new
 
@@ -121,13 +74,6 @@ a MediaWiki pages dump file or a reference to an already open file handle.
 Returns a two element list where the first element is the article title and the second element
 is the article text. Returns an empty list when there are no more pages available.
 
-=head1 LIMITATIONS
-
-This object is only capable of handling page titles and text contents; as well only the text
-of the first revision of an article will be returned. If you need to access the other data
-associated with a page or you need support for more than one revision per page use 
-MediaWiki::DumpFile::Pages instead. 
-
 =head1 AUTHOR
 
 Tyler Riddle, C<< <triddle at gmail.com> >>
@@ -136,6 +82,18 @@ Tyler Riddle, C<< <triddle at gmail.com> >>
 
 Please see MediaWiki::DumpFile for information on how to report bugs in 
 this software. 
+
+=head1 HISTORY
+
+This package originally started life as a very limited hack using only 
+XML::LibXML::Reader and seeking to text and title nodes in the document.
+Implementing a parser for the full document was a daunting task and
+this package sat in the hopes that other people might find it useful. 
+
+Because XML::TreePuller can expose the underlying XML::LibXML::Reader
+object and sync itself back up after the cursor was moved out from
+underneath it, I was able to integrate the logic from this package
+into the main ::Pages parser. 
 
 =head1 COPYRIGHT & LICENSE
 

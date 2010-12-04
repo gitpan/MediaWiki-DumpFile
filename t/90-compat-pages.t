@@ -1,6 +1,6 @@
 #!perl -w
 
-use Test::Simple tests => 108;
+use Test::Simple tests => 110;
 use strict;
 use MediaWiki::DumpFile::Compat;
 
@@ -42,7 +42,7 @@ sub test_one {
 	ok($pages->version eq '0.3');
 	
 	if ($mode eq 'file') {
-		ok($pages->size == 3100);
+		ok($pages->size == 3117);
 	} elsif ($mode eq 'handle') {
 		ok(! defined($pages->size))
 	} else {
@@ -89,12 +89,13 @@ sub test_three {
 	my $page = $pages->next;
 
 	ok(defined($page));
-	ok($page->redirect);
 	ok($page->title eq 'Title Test Value #3');
 	ok($page->id == 3);
 	ok($page->timestamp eq '2005-07-09T18:41:10Z');
 	ok($page->username eq 'Username Test Value');
 	ok($page->userid == 1292);
+	ok(ref($page->categories) eq 'ARRAY');
+	ok($page->categories->[0] eq 'test');
 }
 
 sub test_four {

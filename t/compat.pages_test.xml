@@ -62,8 +62,7 @@
       <contributor><username>Username Test Value</username><id>1292</id></contributor>
       <minor/>
       <comment>Comment Test Value</comment>
-      <text xml:space="preserve">#redirect [[fooooo]]
-</text>
+      <text xml:space="preserve">[[category:test]] #redirect [[fooooo]]</text>
     </revision>
 </page>
 

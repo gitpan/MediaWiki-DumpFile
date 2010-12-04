@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile::Pages;
 
-our $VERSION = '0.1.7';
+our $VERSION = '0.2.0';
 
 use strict;
 use warnings;
@@ -9,34 +9,58 @@ use Carp qw(croak);
 use Data::Dumper;
 
 use XML::TreePuller;
+use XML::LibXML::Reader;
 
 sub new {
-	my ($class, $input) = @_;
+	my ($class, @args) = @_;
 	my $self = {};
-	my $reftype = reftype($input);
+	my $reftype; 
 	my $xml;
+	my $input;
+	my %conf;
 	
-	if (! defined($input)) {
-		croak "must specify a file path or open file handle object";
-	} elsif (! defined($reftype)) {
+	bless($self, $class);
+		
+	if (scalar(@args) == 0) {
+		croak "must specify a file path or open file handle object or a hash of options";
+	} elsif (scalar(@args) == 1) {
+		$input = $args[0];
+	} elsif (! scalar(@args) % 2) {
+		croak "must specify a hash as an argument";
+	} else {
+		%conf = @args;
+		
+		if (! defined($input = $conf{input})) {
+			croak "input is a required option";
+		}
+		
+		if (defined($conf{fast_mode})) {
+			$self->{fast_mode} = $conf{fast_mode};
+		}
+	}
+	
+	$reftype = reftype($input);
+	
+	if (! defined($reftype)) {
 		if (! -e $input) {
 			croak("$input is not a file");
 		}
 		
-		$xml = XML::TreePuller->new(location => $input);
+		$xml = $self->_new_puller(location => $input);
+		
 		$self->{input} = $input;
 		
 	} elsif ($reftype eq 'GLOB') {
-		$xml = XML::TreePuller->new(IO => $input);
+		$xml = $self->_new_puller(IO => $input);
 	} else {
 		croak "must specify a file path or open file handle object";
 	}
 	
 	$self->{xml} = $xml;
+	$self->{reader} = $xml->reader;
 	$self->{siteinfo} = undef;
 	$self->{version} = undef;
-	
-	bless($self, $class);
+	$self->{input} = $input;
 	
 	$self->_init;
 	
@@ -44,11 +68,48 @@ sub new {
 }
 
 sub next {
-	my ($self) = @_;
-	my $version = $self->{version};
-	my $new = $self->{xml}->next;
+	my ($self, $fast) = @_;
+	my $version;
+	my $new;
 	
-	return undef unless defined $new;
+	if ($fast || $self->{fast_mode}) {
+		my ($title, $text);
+		
+		if ($self->{finished}) {
+			return ();
+		}
+		
+		eval { ($title, $text) = $self->_fast_next; };
+		
+		if ($@) {
+			chomp($_);
+			croak("E_XML_PARSE_FAILED \"$@\" see the ERRORS section of the MediaWiki::DumpFile::Pages Perl module documentation for what to do");
+		}
+		
+		unless (defined($title)) {
+			$self->{finished} = 1;
+			return ();
+		}
+		
+		return MediaWiki::DumpFile::Pages::FastPage->new($title, $text);
+	}
+
+	if ($self->{finished}) {
+		return undef;
+	}
+	
+	$version = $self->{version};
+	eval { $new  = $self->{xml}->next; };
+	
+	if ($@) {
+		chomp($_);
+		croak("E_XML_PARSE_FAILED \"$@\" see the ERRORS section of the MediaWiki::DumpFile::Pages Perl module documentation for what to do");
+	}
+			
+	unless (defined($new)) {
+		$self->{finished} = 1;
+		return undef;
+	}
 	
 	return MediaWiki::DumpFile::Pages::Page->new($new, $version);
 }
@@ -89,11 +150,95 @@ sub _init {
 		$self->{siteinfo} = $xml->next;
 		
 		bless($self, 'MediaWiki::DumpFile::PagesSiteinfo');
-	} elsif ($version > 0.4) {
-		croak "version $version dump file is not supported";
+	} 
+	
+	if ($version > 0.4 && ! $ENV{MEDIAWIKI_DUMPFILE_VERSION_IGNORE}) {
+		my $filename;
+		my $msg;
+		
+		if (ref($self->{input}) eq '') {
+			$filename = $self->{input};
+		} else {
+			$filename = ref($self->{input});
+		}
+				
+		$msg = "E_UNTESTED_DUMP_VERSION Version $version dump file \"$filename\" has not been tested with ";
+		$msg .= __PACKAGE__ . " version $VERSION; see the ERRORS section of the MediaWiki::DumpFile::Pages Perl module documentation for what to do";
+
+		die $msg;		
 	}
 		
 	return undef;
+}
+
+sub _new_puller {
+	my ($self, @args) = @_;
+	my $ret;
+	
+	eval { $ret = XML::TreePuller->new(@args) };
+	
+	if ($@) {
+		chomp($@);
+		croak("E_XML_CREATE_FAILED \"$@\" see the ERRORS section of the MediaWiki::DumpFile::Pages Perl module documentation for what to do")
+	}
+	
+	return $ret;
+}
+
+sub _get_text {
+	my ($self) = @_;
+	my $r = $self->{reader};
+	my @buffer;
+	my $type;
+
+	while($r->nodeType != XML_READER_TYPE_TEXT && $r->nodeType != XML_READER_TYPE_END_ELEMENT) {
+		$r->read or die "could not read";
+	}
+
+	while($r->nodeType != XML_READER_TYPE_END_ELEMENT) {
+		if ($r->nodeType == XML_READER_TYPE_TEXT) {
+			push(@buffer, $r->value);
+		}
+		
+		$r->read or die "could not read";
+	}
+
+	return join('', @buffer);	
+}
+
+sub _fast_next {
+	my ($self) = @_;
+	my $reader = $self->{reader};
+	my ($title, $text);
+	
+	if ($self->{finished}) {
+		return ();
+	}
+	
+	while(1) {
+		my $type = $reader->nodeType;
+		 
+		if ($type == XML_READER_TYPE_ELEMENT) {
+			if ($reader->name eq 'title') {
+				$title = $self->_get_text();
+				last unless $reader->nextElement('text') == 1;
+				next;
+			} elsif ($reader->name eq 'text') {
+				$text = $self->_get_text();
+				$reader->nextElement('page');
+				last;
+			}		
+		} 
+		
+		last unless $reader->nextElement == 1;
+	}
+	
+	if (! defined($title) || ! defined($text)) {
+		$self->{finished} = 1;
+		return ();
+	}
+
+	return($title, $text);
 }
 
 package MediaWiki::DumpFile::PagesSiteinfo;
@@ -286,6 +431,29 @@ sub ip {
 	return $ip->text;
 }
 
+package MediaWiki::DumpFile::Pages::FastPage;
+
+sub new {
+	my ($class, $title, $text) = @_;
+	my $self = { title => $title, text => $text };
+	
+	bless($self, $class);
+	
+	return $self;
+}
+
+sub title {
+	return $_[0]->{title};
+}
+
+sub text {
+	return $_[0]->{text};
+}
+
+sub revision {
+	return $_[0];
+}
+
 1;
 
 __END__
@@ -298,8 +466,14 @@ MediaWiki::DumpFile::Pages - Process an XML dump file of pages from a MediaWiki 
 
   use MediaWiki::DumpFile::Pages;
   
-  $pages = MediaWiki::DumpFile::Pages->new($file);
-  $pages = MediaWiki::DumpFile::Pages->new(\*FH);
+  #dump files up to version 0.4 supported 
+  $input = 'file-name.xml';
+  $input = \*FH;
+  
+  $pages = MediaWiki::DumpFile::Pages->new($input);
+  
+  %opts = (input => $input, fast_mode => 0);
+  $pages = MediaWiki::DumpFile::Pages->new(%opts);
   
   $version = $pages->version; 
   
@@ -338,8 +512,23 @@ MediaWiki::DumpFile::Pages - Process an XML dump file of pages from a MediaWiki 
 
 =head2 new
 
-This is the constructor for this package. It is called with a single parameter: the location of
+This is the constructor for this package. If it is called with a single parameter it must be
+the input to use for parsing. The input is specified as either the location of
 a MediaWiki pages dump file or a reference to an already open file handle. 
+
+If more than one argument is passed to new it must be a hash of options. The keys are named
+
+=over 4
+
+=item input
+
+This is the input to parse as documented earlier.
+
+=item fast_mode
+
+Have the iterator run in fast mode by default. See the section on fast mode below. 
+
+=back
 
 =head2 version
 
@@ -369,8 +558,21 @@ string value. Requires a dump file of at least version 0.3.
 
 =head2 next
 
-Returns an instance of MediaWiki::DumpFile::Pages::Page or undef if there is no more pages
-available. 
+Accepts an optional boolean argument to control fast mode. If the argument is specified
+it forces fast mode on or off. Otherwise the mode is controlled by the fast_mode
+configuration option. See the section below on fast mode for more information. 
+
+It is safe to intermix calls between fast and normal mode in one parsing session.
+
+In all modes undef is returned if there is no more data to parse. 
+
+In normal mode an instance of MediaWiki::DumpFile::Pages::Page is returned
+and the full API is available. 
+
+In fast mode an instance of MediaWiki::DumpFile::Pages::FastPage is returned; the only
+methods supported are title, text, and revision. This class can act as a stand-in for
+MediaWiki::DumpFile::Pages::Page except it will throw an error if any attempt is made
+to access any other part of the API. 
 
 =head2 size
 
@@ -380,6 +582,16 @@ to a file handle it returns undef.
 =head2 current_byte
 
 Returns the number of bytes of XML that have been successfully parsed. 
+
+=head1 FAST MODE
+
+Fast mode is a way to get increased parsing performance while dropping some of the features
+available in the parser. If you only require the titles and text from a page then fast mode
+will decrease the amount of time required just to parse the XML file; some times drastically. 
+
+When fast mode is used on a dump file that has more than one revision of a single article in
+it only the text of the first article in the dump file will be returned; the other revisions
+of the article will be silently skipped over. 
 
 =head1 MediaWiki::DumpFile::Pages::Page
 
@@ -466,6 +678,87 @@ Returns the IP address of the editor if the editor was anonymous or undef otherw
 
 Returns the username of the editor if they were logged in or the IP address if the editor
 was anonymous. 
+
+=back
+
+=head1 ERRORS
+
+=head2 E_XML_CREATE_FAILED Error creating XML parser object
+
+While trying to build the XML::TreePuller object a fatal error
+occured; the error message from the parser was included in the
+generated error output you saw. At the time of writing this document
+the error messages are not very helpful but for some reason the
+XML parser rejected the document; here's a list of things to check:
+
+=over 4
+
+=item Make sure the file exists and is readable
+
+=item Make sure the file is actually an XML file and is not compressed
+
+=back
+
+=head2 E_XML_PARSE_FAILED XML parser failed during parsing
+
+Something went wrong with the XML parser - the error from the parser
+was included in the generated error message. This happens when there is
+a severe error parsing the document such as a syntax error.
+
+=head2 E_UNTESTED_DUMP_VERSION Untested dump file versions
+
+From time to time Wikimedia updates the Mediawiki dump file XML schema and they change the 
+version number of the document. It is possible that a schema change can cause problems 
+unmarshalling the document so when an unsupported version of a dump file is encountered this
+software stops as a precaution. When this happens it dies with an error like the following:
+
+E_UNTESTED_DUMP_VERSION Version 0.4 dump file "t/simpleenglish-wikipedia.xml" 
+has not been tested with MediaWiki::DumpFile::Pages version 0.1.9; see the ERRORS 
+section of the MediaWiki::DumpFile::Pages Perl module documentation for what to do 
+at lib/MediaWiki/DumpFile/Pages.pm line 148.
+
+If you encounter this condition you can do the following:
+
+=over 4
+
+=item Be adventurous 
+
+If you just want to have the software run anyway and see what happens
+you can set the environment variable MEDIAWIKI_DUMPFILE_VERSION_IGNORE to a true value 
+which will cause the module to silently ignore the case and continue parsing the document.
+You can set the environment and run your program at the same time with a command like
+this:
+
+  MEDIAWIKI_DUMPFILE_VERSION_IGNORE=1 ./wikiscript.pl 
+
+This may work fine or it may fail in subtle ways silently - there is no way to know for sure. 
+
+=item Check your module version
+
+The error message should have the version number of this module in it. Check CPAN and 
+see if there is a newer version with official support. The web page 
+
+  http://search.cpan.org/dist/MediaWiki-DumpFile/lib/MediaWiki/DumpFile/Pages.pm
+
+will show the highest supported version dump files near the top of the SYNOPSIS.
+
+=item Check the bug database
+
+It is possible the issue has been resolved already but the update has not made it 
+onto CPAN yet. See this web page
+
+  http://rt.cpan.org/Public/Dist/Display.html?Name=mediawiki-dumpfile
+
+and check for an open bug report relating to the version number changing. 
+
+=item Open a bug report
+
+You can use the same URL for rt.cpan.org above to create a new ticket
+in MediaWiki-DumpFile or just send an email to "bug-mediawiki-dumpfile
+at rt.cpan.org". Be sure to use a title for the bug that others will
+be able to use to find this case as well and to include the full text
+from the error message. Please also specify if you were adventurous or
+not and if it was successful for you. 
 
 =back
 

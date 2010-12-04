@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile;
 
-our $VERSION = '0.1.8';
+our $VERSION = '0.2.0_02';
 
 use warnings;
 use strict;
@@ -26,13 +26,10 @@ sub sql {
 }
 
 sub pages {
-	if (! defined($_[1])) {
-		croak "must specify a filename or open filehandle";
-	}
-	
+	my ($class, @args) = @_;
 	require MediaWiki::DumpFile::Pages;
 	
-	return MediaWiki::DumpFile::Pages->new($_[1]);
+	return MediaWiki::DumpFile::Pages->new(@args);
 }
 
 sub fastpages {
@@ -97,35 +94,92 @@ any arbitrary SQL dump file used to recreate a single table in the MediaWiki ins
 
 Return an instance of MediaWiki::DumpFile::Pages. This object parses the contents of the
 page dump file and supports both single and multiple revisions per article as well as
-associated metadata.
+associated metadata. The page can be parsed in either normal or fast mode where
+fast mode is only capable of parsing the article titles and text contents, with
+restrictions. 
 
 =head2 fastpages
 
-Return an instance of MediaWiki::DumpFile::FastPages. This object parses the contents
-of the page dump file but only supports fetching the article titles and text and will
-only return the text for the first revision of the article if the page dump includes
-multiple revisions. The trade off for the lack of features is drastically increased
-processing speed.
+Return an instance of MediaWiki::DumpFile::FastPages. This class is a subclass of
+MediaWiki::DumpFile::Pages that configures it to fast mode by default and uses 
+a tuned iterator interface with slightly less overhead. 
 
 =head1 SPEED
 
-These benchmarks will give you a rough idea of how fast you can expect the XML dump
-files to be processed. The benchmark is to print all of the article titles and text
-to STDOUT and was executed on a 2.66 GHz Intel Core Duo Macintosh running
-Snow Leopard. The test data is a dump file of the Simple English Wikipedia from
-October 21, 2009.
+MediaWiki::DumpFile now runs in a slower configuration when installed with out
+the recommended Perl modules; this was done so that the package can be installed
+with out a C compiler and still have some utility. As well there is a fast mode
+available when parsing the XML document that can give significant speed boosts 
+while giving up support for anything except for the article titles and text
+contents. If you want to decrease the processing overhead of this system follow
+this guide:
 
 =over 4
 
-=item MediaWiki-DumpFile-FastPages: 26.16 MiB/sec
+=item Install XML::CompactTree::XS
 
-=item MediaWiki-DumpFile-Pages: 8.32 MiB/sec
+Having this module on your system will cause XML::TreePuller to use it
+automatically - this will net you a dramatic speed boost if it is not
+already installed. This can give you a 3-4 times speed increase when
+not using fast mode. 
 
-=item MediaWiki-DumpFile-Compat: 7.26 MiB/sec
+=item Use fast mode if possible
 
-=item Parse-MediaWikiDump: 3.2 MiB/sec
+Details of fast mode and the restrictions it imposes are in the MediaWiki::DumpFile::Pages
+documentation. Fast mode is also available in the compatibility library as a new available
+option. Fast mode can give you a further 3-4 times speed increase over parsing with
+XML::CompatTree::XS installed but it does not require that module to function; fast mode
+is nearly the same speed with or with out XML::CompactTree::XS installed. 
+
+=item Stop using compatibility mode
+
+If you are using the compatibility API you lose performance; the compatibility API
+is a set of wrappers around the MediaWiki::DumpFile API and while it is faster than
+the original Parse::MediaWikiDump::Pages it is still slower than MediaWiki::DumpFile::Pages
+by a few percent. 
+
+=item Use MediaWiki::DumpFile::FastPages
+
+This is a subclass of MediaWiki::DumpFile::Pages that configures it by default to run
+in fast mode and uses a tuned iterator that decreases overhead another few percent. This
+is generally the absolute fastest fully supported and tested way to parse the XML dump files. 
+
+=item Start hacking
+
+I've put some considerable effort into finding the fastest ways to parse the XML dump files. 
+Probably the most important part of this research has been an XML benchmarking suite I
+created for specifically measuring the performance of parsing the Mediawiki page dump
+files. The benchmark suite is present in the module tarball in the speed_test/ directory.
+It contains a comprehensive set of test cases to measure the performance of a good
+number of XML parsers and parsing schemes from CPAN. You can use this suite as a starting
+point to see how various parsers work and how fast they go; as well you can use it to
+reliably verify the performance impacts of experiments in parsing performance. 
+
+The result of my research into XML parsers was to create XML::TreePuller which is the heart
+XML processing system of MediaWiki::DumpFile::Pages - it's fast but I'm positive there
+is room for improvement. Increaseing the speed of that module will increase the speed
+of MediaWiki::DumpFile::Pages as well. 
+
+Please consider sharing the results of your hacking with me by opening a ticket in the
+bug reporting system as documented below.
+
+The following test cases are notable and could be used by anyone who just needs to extract
+article titles and text:
+
+=over 4
+
+=item XML-Bare
+
+Wow is it fast! And wrong! Just so very wrong... but it does pass the tests *shrug*
 
 =back
+
+=back
+
+=head2 Benchmarks
+
+See MediWiki::DumpFile::Benchmarks for a comprehensive report on dump file processing
+speeds. 
 
 =head1 AUTHOR
 
