@@ -1,3 +1,5 @@
+=head1 NAME
+
 Parse::MediaWikiDump::Revisions - Object capable of processing dump files with multiple revisions per article
 
 =head1 ABOUT

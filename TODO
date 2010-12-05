@@ -1,2 +1,0 @@
-  * ::Compat - compile regexs that are used repeatedly 
-  * ::Compat::namespaces_names cache result

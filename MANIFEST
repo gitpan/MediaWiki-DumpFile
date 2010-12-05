@@ -39,8 +39,6 @@ speed_test/bin/libxml.c
 speed_test/bin/Makefile
 speed_test/MODULES
 speed_test/README
-speed_test/results.data
-speed_test/results.log
 speed_test/test_cases/expat.t
 speed_test/test_cases/libxml.t
 speed_test/test_cases/MediaWiki-DumpFile-Compat_fastmode.t

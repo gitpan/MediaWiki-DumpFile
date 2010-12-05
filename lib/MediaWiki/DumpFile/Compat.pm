@@ -160,11 +160,16 @@ sub namespaces {
 }
 
 sub namespaces_names {
+	my ($self) = @_;
 	my @result;
+	
+	return $self->{cache}->{namespaces_names} if defined $self->{cache}->{namespaces_names};
 	
 	foreach (@{ $_[0]->namespaces }) {
 		push(@result, $_->[1]);
 	}
+	
+	$self->{cache}->{namespaces_names} = \@result;
 	
 	return \@result;
 }
@@ -250,6 +255,8 @@ package #go away indexer!
 use strict;
 use warnings;
 
+our %REGEX_CACHE_CATEGORIES;
+
 sub new {
 	my ($class, $page, $namespaces, $category_anchor, $revision) = @_;
 	my $self = {page => $page, namespaces => $namespaces, category_anchor => $category_anchor};
@@ -311,7 +318,7 @@ sub namespace {
 		return $self->{cache}->{namespace};
 	}
 	
-	if ($title =~ m/^([^:]+):(.*)/) {
+	if ($title =~ m/^([^:]+):(.*)/o) {
 		foreach (@{ $self->{namespaces} } ) {
 			my ($num, $name) = @$_;
 			if ($1 eq $name) {
@@ -333,7 +340,7 @@ sub redirect {
 	
 	return $self->{cache}->{redirect} if defined $self->{cache}->{redirect};
 
-	if ($$text =~ m/^#redirect\s*:?\s*\[\[([^\]]*)\]\]/i) {
+	if ($$text =~ m/^#redirect\s*:?\s*\[\[([^\]]*)\]\]/io) {
 		$ret = $1;
 	} else {
 		$ret = undef;
@@ -353,7 +360,11 @@ sub categories {
 	
 	return $self->{cache}->{categories} if defined $self->{cache}->{categories};
 	
-	while($$text =~ m/\[\[$anchor:\s*([^\]]+)\]\]/gi) {
+	if (! defined($REGEX_CACHE_CATEGORIES{$anchor})) {
+		$REGEX_CACHE_CATEGORIES{$anchor} = qr/\[\[$anchor:\s*([^\]]+)\]\]/i;
+	}
+		
+	while($$text =~ /$REGEX_CACHE_CATEGORIES{$anchor}/g) {
 		my $buf = $1;
 		
 		#deal with the pipe trick

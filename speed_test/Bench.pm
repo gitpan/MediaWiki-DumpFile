@@ -1,4 +1,5 @@
-package Bench;
+package #go away cpan indexer! 
+  Bench;
 
 use strict;
 use warnings;

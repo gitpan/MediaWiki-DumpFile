@@ -13,8 +13,13 @@ for each specific article; to parse a comprehensive dump file use the Parse::Med
   use MediaWiki::DumpFile::Compat;
   
   $pmwd = Parse::MediaWikiDump->new;
-  $pages = $pmwd->pages('pages-articles.xml');
-  $pages = $pmwd->pages(\*FILEHANDLE);
+  
+  $input = 'pages-articles.xml';
+  $input = \*FILEHANDLE;
+  
+  $pages = $pmwd->pages();
+  $pages = $pmwd->pages();
+  $pages = $pmwd->pages(input => $input, fast_mode => 0);
   
   #print the title and id of each article inside the dump file
   while(defined($page = $pages->next)) {
@@ -31,6 +36,13 @@ Open the specified MediaWiki dump file. If the single argument to this method
 is a string it will be used as the path to the file to open. If the argument
 is a reference to a filehandle the contents will be read from the filehandle as
 specified. 
+
+If more than one argument is supplied the arguments must be a hash of configuration 
+options. The input option is required and is the same as previously described. The
+fast_mode option is optional, defaults to being off, and if set to a true value
+will cause the parser to run in a mode that is much faster but only provides access
+to the title and text contents of a page. See the MediaWiki::DumpFile::Pages 
+for details about fast mode. 
 
 =item $pages->next
 

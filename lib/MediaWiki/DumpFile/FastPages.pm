@@ -2,7 +2,7 @@
 
 package MediaWiki::DumpFile::FastPages;
 
-our $VERSION = '0.1.9';
+our $VERSION = '0.2.0';
 
 use base qw(MediaWiki::DumpFile::Pages);
 use strict;

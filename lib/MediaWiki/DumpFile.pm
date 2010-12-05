@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile;
 
-our $VERSION = '0.2.0_02';
+our $VERSION = '0.2.0';
 
 use warnings;
 use strict;
@@ -75,13 +75,16 @@ This module is used to parse various dump files from a MediaWiki instance. The m
 likely case is that you will want to be parsing content at http://download.wikimedia.org/backup-index.html 
 provided by WikiMedia which includes the English and all other language Wikipedias. 
 
-This module is the successor to Parse::MediaWikiDump acting as a full replacement in feature set
-and providing a backwards compatible API that is faster than Parse::MediaWikiDump is (see MediaWiki::DumpFile::Compat). 
+This module is the successor to Parse::MediaWikiDump acting as a near full replacement in feature set
+and providing an independent 100% backwards compatible API that is faster than Parse::MediaWikiDump is 
+(see the MediaWiki::DumpFile::Compat and MediaWiki::DumpFile::Benchmarks documentation for details). 
 
 =head1 STATUS
 
 This software is maturing into a stable and tested state with known users; the API is
-stable and will not be changed. 
+stable and will not be changed. The software is actively being maintained and improved; 
+please submit bug reports, feature requests, and other feedback to the author using the
+bug reporting features described below. 
 
 =head1 FUNCTIONS
 
@@ -185,11 +188,41 @@ speeds.
 
 Tyler Riddle, C<< <triddle at gmail.com> >>
 
+=head1 LIMITATIONS
+
+=over 4
+
+=item English Wikipedia comprehensive dump files not supported
+
+There are two types of Mediawiki dump files sharing one schema: ones with
+one revision of page per entry and one with multiple revisions of a page per entry.
+This software is designed to parse either case and provide a consistent API however
+it comes with the restriction that an entire entry must fit in memory. The normal
+English Wikipedia dump file is around 20 gigabytes and each entry easily fits into 
+RAM on most machines. 
+
+In the case of the comprehensive English Wikipedia dump files the file itself is measured
+in the terabytes and a single entry can be 20 gigabytes or more. It is technically possible 
+for the original Parse::MediaWikiDump::Revisions (not the compatibility version provided 
+in this module) to parse that dump file however Parse::MediaWikiDump runs at a few megabytes per
+second under the best of conditions. 
+
+=back
+
 =head1 BUGS
 
 Please report any bugs or feature requests to C<bug-mediawiki-dumpfile at rt.cpan.org>, or through
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=MediaWiki-DumpFile>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
+
+=over 4
+
+=item 56843 ::Pages->current_byte() wraps at 2 gigs+
+
+If you have a large XML file, where the file size is greater than a signed 32bit integer,
+the returned value from this method can go negative. 
+
+=back
 
 =head1 SUPPORT
 

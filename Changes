@@ -18,6 +18,7 @@ Revision history for MediaWiki-DumpFile
     to distro; hopefully more people will be interested in the shootout. 
   * Ported over documentation from Parse::MediaWikiDump giving ::Compat
     full documentation in this module as well. 
+  * ::Compat::page now uses optimized regex caching and compilation 
 
 0.1.8
   * Resolved bug #58107 "MediaWiki::DumpFile::SQL, not all dumps have LOCK"
