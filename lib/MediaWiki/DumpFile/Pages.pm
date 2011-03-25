@@ -1,6 +1,7 @@
 package MediaWiki::DumpFile::Pages;
 
-our $VERSION = '0.2.0';
+our $VERSION = '0.2.1';
+our $TESTED_SCHEMA_VERSION = 0.5;
 
 use strict;
 use warnings;
@@ -20,6 +21,11 @@ sub new {
 	my %conf;
 	
 	bless($self, $class);
+	
+	$self->{siteinfo} = undef;
+	$self->{version} = undef;
+	$self->{fast_mode} = undef;
+	$self->{version_ignore} = 1;
 		
 	if (scalar(@args) == 0) {
 		croak "must specify a file path or open file handle object or a hash of options";
@@ -36,6 +42,10 @@ sub new {
 		
 		if (defined($conf{fast_mode})) {
 			$self->{fast_mode} = $conf{fast_mode};
+		}
+		
+		if (defined($conf{strict})) {
+			$self->{version_ignore} = $conf{version_ignore};
 		}
 	}
 	
@@ -56,13 +66,19 @@ sub new {
 		croak "must specify a file path or open file handle object";
 	}
 	
+	if (exists($ENV{MEDIAWIKI_DUMPFILE_VERSION_IGNORE})) {
+		$self->{version_ignore} = $ENV{MEDIAWIKI_DUMPFILE_VERSION_IGNORE};
+	}
+	
+	if (exists($ENV{MEDIAWIKI_DUMPFILE_FAST_MODE})) {
+		$self->{fast_mode} = $ENV{MEDIAWIKI_DUMPFILE_FAST_MODE};
+	}
+	
 	$self->{xml} = $xml;
 	$self->{reader} = $xml->reader;
-	$self->{siteinfo} = undef;
-	$self->{version} = undef;
 	$self->{input} = $input;
-	
-	$self->_init;
+
+	$self->_init_xml;
 	
 	return $self;
 }
@@ -135,7 +151,7 @@ sub version {
 
 #private methods
 
-sub _init {
+sub _init_xml {
 	my ($self) = @_;
 	my $xml = $self->{xml};
 	my $version;
@@ -145,14 +161,24 @@ sub _init {
 	$xml->iterate_at('/mediawiki/page', 'subtree');
 	
 	$version = $self->{version} = $xml->next->attribute('version');
+
+	unless ($self->{version_ignore}) {
+		$self->_version_enforce($version);
+	}
 	
 	if ($version > 0.2) {
 		$self->{siteinfo} = $xml->next;
 		
 		bless($self, 'MediaWiki::DumpFile::PagesSiteinfo');
 	} 
-	
-	if ($version > 0.4 && ! $ENV{MEDIAWIKI_DUMPFILE_VERSION_IGNORE}) {
+			
+	return undef;
+}
+
+sub _version_enforce {
+	my ($self, $version) = @_;
+
+	if ($version > $TESTED_SCHEMA_VERSION) {
 		my $filename;
 		my $msg;
 		
@@ -167,8 +193,7 @@ sub _init {
 
 		die $msg;		
 	}
-		
-	return undef;
+
 }
 
 sub _new_puller {
@@ -466,15 +491,24 @@ MediaWiki::DumpFile::Pages - Process an XML dump file of pages from a MediaWiki 
 
   use MediaWiki::DumpFile::Pages;
   
-  #dump files up to version 0.4 supported 
+  #dump files up to version 0.5 are tested 
   $input = 'file-name.xml';
   $input = \*FH;
   
   $pages = MediaWiki::DumpFile::Pages->new($input);
   
-  %opts = (input => $input, fast_mode => 0);
-  $pages = MediaWiki::DumpFile::Pages->new(%opts);
+  #default values
+  %opts = (
+    input => $input, 
+    fast_mode => 0,
+    version_ignore => 1
+  );
   
+  #override configuration options passed to constructor
+  $ENV{MEDIAWIKI_DUMPFILE_VERSION_IGNORE} = 0;
+  $ENV{MEDIAWIKI_DUMPFILE_FAST_MODE} = 1;
+  
+  $pages = MediaWiki::DumpFile::Pages->new(%opts);
   $version = $pages->version; 
   
   #version 0.3 and later dump files only
@@ -526,7 +560,11 @@ This is the input to parse as documented earlier.
 
 =item fast_mode
 
-Have the iterator run in fast mode by default. See the section on fast mode below. 
+Have the iterator run in fast mode by default; defaults to false. See the section on fast mode below. 
+
+=item version_ignore
+
+Do not enforce parsing of only tested schemas in the XML document; defaults to true
 
 =back
 
@@ -707,10 +745,11 @@ a severe error parsing the document such as a syntax error.
 
 =head2 E_UNTESTED_DUMP_VERSION Untested dump file versions
 
-From time to time Wikimedia updates the Mediawiki dump file XML schema and they change the 
-version number of the document. It is possible that a schema change can cause problems 
-unmarshalling the document so when an unsupported version of a dump file is encountered this
-software stops as a precaution. When this happens it dies with an error like the following:
+The dump files created by Mediawiki include a versioned XML schema. This software
+is tested with the most recent known schema versions and can be configured to enforce
+a specific tested schema. MediaWiki::DumpFile::Pages no longer enforces the versions
+by default but the software author using this library has indicated that it should. 
+When this happens it dies with an error like the following:
 
 E_UNTESTED_DUMP_VERSION Version 0.4 dump file "t/simpleenglish-wikipedia.xml" 
 has not been tested with MediaWiki::DumpFile::Pages version 0.1.9; see the ERRORS 
@@ -720,18 +759,6 @@ at lib/MediaWiki/DumpFile/Pages.pm line 148.
 If you encounter this condition you can do the following:
 
 =over 4
-
-=item Be adventurous 
-
-If you just want to have the software run anyway and see what happens
-you can set the environment variable MEDIAWIKI_DUMPFILE_VERSION_IGNORE to a true value 
-which will cause the module to silently ignore the case and continue parsing the document.
-You can set the environment and run your program at the same time with a command like
-this:
-
-  MEDIAWIKI_DUMPFILE_VERSION_IGNORE=1 ./wikiscript.pl 
-
-This may work fine or it may fail in subtle ways silently - there is no way to know for sure. 
 
 =item Check your module version
 
@@ -750,6 +777,19 @@ onto CPAN yet. See this web page
   http://rt.cpan.org/Public/Dist/Display.html?Name=mediawiki-dumpfile
 
 and check for an open bug report relating to the version number changing. 
+
+=item Be adventurous 
+
+If you just want to have the software run anyway and see what happens
+you can set the environment variable MEDIAWIKI_DUMPFILE_VERSION_IGNORE to a true value 
+which will cause the module to silently ignore the case and continue parsing the document.
+You can set the environment and run your program at the same time with a command like
+this:
+
+  MEDIAWIKI_DUMPFILE_VERSION_IGNORE=1 ./wikiscript.pl 
+
+This may work fine or it may fail in subtle ways silently - there is no way to know for sure
+with out studying the schema to see if the changes are backwards compatible.  
 
 =item Open a bug report
 
