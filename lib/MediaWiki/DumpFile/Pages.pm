@@ -1,6 +1,6 @@
 package MediaWiki::DumpFile::Pages;
 
-our $VERSION = '0.2.1';
+our $VERSION = '0.2.2';
 our $TESTED_SCHEMA_VERSION = 0.5;
 
 use strict;
@@ -11,6 +11,7 @@ use Data::Dumper;
 
 use XML::TreePuller;
 use XML::LibXML::Reader;
+use IO::Uncompress::AnyUncompress qw($AnyUncompressError);
 
 sub new {
 	my ($class, @args) = @_;
@@ -19,6 +20,7 @@ sub new {
 	my $xml;
 	my $input;
 	my %conf;
+	my $io;
 	
 	bless($self, $class);
 	
@@ -56,15 +58,13 @@ sub new {
 			croak("$input is not a file");
 		}
 		
-		$xml = $self->_new_puller(location => $input);
-		
-		$self->{input} = $input;
-		
-	} elsif ($reftype eq 'GLOB') {
-		$xml = $self->_new_puller(IO => $input);
-	} else {
-		croak "must specify a file path or open file handle object";
-	}
+	} elsif ($reftype ne 'GLOB') {
+		croak('must provide a GLOB reference');
+	} 
+	
+	$self->{input} = $input;
+	$io = IO::Uncompress::AnyUncompress->new($input);		
+	$xml = $self->_new_puller(IO => $io);
 	
 	if (exists($ENV{MEDIAWIKI_DUMPFILE_VERSION_IGNORE})) {
 		$self->{version_ignore} = $ENV{MEDIAWIKI_DUMPFILE_VERSION_IGNORE};
@@ -77,6 +77,7 @@ sub new {
 	$self->{xml} = $xml;
 	$self->{reader} = $xml->reader;
 	$self->{input} = $input;
+	$self->{io} = $io;
 
 	$self->_init_xml;
 	
@@ -137,12 +138,29 @@ sub size {
 		return undef;
 	}
 	
+	#if we are decompressing a file on the fly then don't report the size
+	#of the file because we don't actually know the uncompressed size,
+	#only the compressed size
+	if (defined($_[0]->{io}->getHeaderInfo)) {
+		return undef;
+	}
+	
 	my @stat = stat($source);
 	return $stat[7];
 }
 
 sub current_byte {
-	return $_[0]->{xml}->reader->byteConsumed;
+	return $_[0]->{xml}->reader->byteConsumed;	
+}
+
+sub completed {
+	my ($self) = @_;
+	my $size = $self->size;
+	my $current = $self->current_byte;
+	
+	return -1 unless (defined($size) && defined($current));
+	
+	return int($current / $size * 100);
 }
 
 sub version {
@@ -493,6 +511,9 @@ MediaWiki::DumpFile::Pages - Process an XML dump file of pages from a MediaWiki 
   
   #dump files up to version 0.5 are tested 
   $input = 'file-name.xml';
+  #many supported compression formats
+  $input = 'file-name.xml.bz2';
+  $input = 'file-name.xml.gz';
   $input = \*FH;
   
   $pages = MediaWiki::DumpFile::Pages->new($input);

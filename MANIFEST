@@ -69,3 +69,4 @@ speed_test/test_cases/XML-TreePuller_xpath.t
 speed_test/test_cases/XML-Twig.t
 speed_test/test_cases/MediaWiki-DumpFile-Pages_fastmode.t
 META.yml                                 Module meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)

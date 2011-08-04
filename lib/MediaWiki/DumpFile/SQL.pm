@@ -1,12 +1,14 @@
 package MediaWiki::DumpFile::SQL;
 
-our $VERSION = '0.1.8';
+our $VERSION = '0.2.2';
 
 use strict;
 use warnings;
 use Data::Dumper;
 use Carp qw(croak);
 use Scalar::Util qw(reftype);
+
+use IO::Uncompress::AnyUncompress qw($AnyUncompressError);
 
 #public methods
 sub new {
@@ -70,14 +72,7 @@ sub open_file {
 	my $type = reftype($file);
 	my $fh;
 	
-	if (defined($type) && $type eq 'GLOB') {
-		$fh = $self->{fh} = $file;
-	} else {
-		open($fh, $file) or die "could not open $file: $!";
-		$self->{fh} = $fh;
-		
-	}
-	
+	$self->{fh} = $fh = IO::Uncompress::AnyUncompress->new($file);
 	my $line = <$fh>;
 	
 	if ($line !~ m/^-- MySQL dump/) {
@@ -236,6 +231,7 @@ sub create_type_map {
 		blob => 'varchar',
 		mediumblob => 'varchar',
 		tinyblob => 'varchar',
+		varbinary => 'varchar',
 		
 	};
 	
@@ -366,7 +362,10 @@ MediaWiki::DumpFile::SQL - Process SQL dump files from a MediaWiki instance
 
   use MediaWiki::DumpFile::SQL;
   
-  $sql = MediaWiki::DumpFile::SQL->new($file);
+  $sql = MediaWiki::DumpFile::SQL->new('dumpfile.sql');
+  #many compression formats are supported
+  $sql = MediaWiki::DumpFile::SQL->new('dumpfile.sql.gz');
+  $sql = MediaWiki::DumpFile::SQL->new('dumpfile.sql.bz2');
   $sql = MediaWiki::DumpFile::SQL->new(\*FH);
   
   @schema = $sql->schema;
