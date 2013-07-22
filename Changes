@@ -1,8 +1,9 @@
 Revision history for MediaWiki-DumpFile
 
-0.2.2
-  * Fixed bug #69983] "type map failed for varbinary"
+0.2.2 July 22, 2013
+  * Fixed bug #69983 "type map failed for varbinary"
   * Included transparant support for compressed XML and SQL files
+  * Applied patch by CHOCOLATE per bug #85143
 
 0.2.1
   * No longer enforces version checking of the XML document schema by default

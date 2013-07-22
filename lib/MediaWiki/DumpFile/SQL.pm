@@ -230,6 +230,7 @@ sub create_type_map {
 		
 		blob => 'varchar',
 		mediumblob => 'varchar',
+		mediumtext => 'varchar',
 		tinyblob => 'varchar',
 		varbinary => 'varchar',
 		
@@ -311,7 +312,7 @@ sub new_int {
 sub new_float {
 	return sub {
 		m/\GNULL/gc and return undef;
-		m/\G(-?[\d]+\.[\d]+(e-?[\d]+)?)/gc or die "expected float"; return $1;
+		m/\G(-?[\d]+(?:\.[\d]+(e-?[\d]+)?)?)/gc or die "expected float"; return $1;
 	}
 }
 
@@ -371,16 +372,18 @@ MediaWiki::DumpFile::SQL - Process SQL dump files from a MediaWiki instance
   @schema = $sql->schema;
   $name = $sql->table_name;
   
-  while(defined($row = $sql->next) {
+  while(defined($row = $sql->next)) {
   	#do something with the data from the row
   }
-  
+
 =head1 FUNCTIONS
 
 =head2 new
 
 This is the constructor for this package. It is called with a single parameter: the location of
 a MediaWiki SQL dump file or a reference to an already open file handle. 
+
+Only the definition and data for the B<first> table in a SQL dump file is processed.
 
 =head2 next
 
